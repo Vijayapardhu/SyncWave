@@ -32,12 +32,21 @@ android {
         freeCompilerArgs += "-P=plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=1.9.23"
     }
 
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("x86_64", "arm64-v8a", "armeabi-v7a")
+            isUniversalApk = false
+        }
+    }
+
     buildTypes {
         debug {
-            buildConfigField("String", "SYNCWAVE_BASE_URL", "\"https://sync-1n09sfiqd-vijayapardhus-projects.vercel.app\"")
+            buildConfigField("String", "SYNCWAVE_BASE_URL", "\"https://sync-3em116a07-vijayapardhus-projects.vercel.app\"")
         }
         release {
-            buildConfigField("String", "SYNCWAVE_BASE_URL", "\"https://sync-1n09sfiqd-vijayapardhus-projects.vercel.app\"")
+            buildConfigField("String", "SYNCWAVE_BASE_URL", "\"https://sync-3em116a07-vijayapardhus-projects.vercel.app\"")
         }
     }
 }

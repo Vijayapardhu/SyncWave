@@ -1,5 +1,6 @@
 package com.syncwave.core.webrtc
 
+import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioPlaybackCaptureConfiguration
@@ -38,7 +39,8 @@ import android.annotation.SuppressLint
  */
 @RequiresApi(Build.VERSION_CODES.Q)
 class SystemAudioEncoder(
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val appContext: Context
 ) {
     sealed interface State { data object Running : State; data object Stopped : State }
 
@@ -50,6 +52,8 @@ class SystemAudioEncoder(
     private var pumpJob: Job? = null
     private val sampleRate = 48_000
     private val channels = 2
+    private val audioManager = appContext.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+    private var previousVolume = 0
 
     fun start(projection: MediaProjection, channel: DataChannel) {
         check(channel.state() == DataChannel.State.OPEN) {
@@ -97,6 +101,9 @@ class SystemAudioEncoder(
         recorder.startRecording()
         _state.tryEmit(State.Running)
 
+        previousVolume = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC)
+        audioManager.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, 0, 0)
+
         pumpJob = scope.launch(Dispatchers.IO) {
             val pcm = ShortArray(minBuf)
             val info = MediaCodec.BufferInfo()
@@ -122,6 +129,7 @@ class SystemAudioEncoder(
         runCatching { encoder?.stop() }
         runCatching { encoder?.release() }
         encoder = null
+        audioManager.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, previousVolume, 0)
         _state.tryEmit(State.Stopped)
     }
 

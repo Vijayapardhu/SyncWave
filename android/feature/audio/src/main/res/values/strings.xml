@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SyncWave</string>
+    <string name="notif_channel_id">syncwave_signaling</string>
+    <string name="notif_channel_label">SyncWave Signaling</string>
+    <string name="notif_channel_name_idle">SyncWave idle</string>
+    <string name="notif_channel_name_host">Sharing room %1$s</string>
+    <string name="notif_channel_name_guest">Listening room %1$s</string>
+</resources>

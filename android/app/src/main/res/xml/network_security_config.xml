@@ -12,6 +12,7 @@
         <domain includeSubdomains="true">192.168.0.0</domain>    <!-- private -->
         <domain includeSubdomains="true">172.16.0.0</domain>    <!-- private -->
         <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">openrelay.metered.ca</domain>
     </domain-config>
     <base-config cleartextTrafficPermitted="false" />
 </network-security-config>
