@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" role="img" aria-label="SyncWave">
+  <title>SyncWave header</title>
+  <rect width="1280" height="320" fill="#000"/>
+
+  <!-- Symbol at left, sized for the 320-tall canvas. -->
+  <g transform="translate(60,100)" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 60 C 26 26 52 26 78 60 S 130 94 156 60 S 208 26 234 60 S 286 94 312 60 S 364 26 390 60 S 442 94 468 60"/>
+    <path d="M0 94 C 26 60 52 60 78 94 S 130 128 156 94 S 208 60 234 94 S 286 128 312 94 S 364 60 390 94 S 442 128 468 94"/>
+  </g>
+  <circle cx="528" cy="160" r="11" fill="#fff"/>
+
+  <!-- Wordmark: SyncWave, hand-built paths, scaled to fit ~720px wide. -->
+  <g transform="translate(580,100)" fill="none" stroke="#fff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="translate(0,0)"><path d="M64 9 C 32 0 0 9 0 30 C 0 54 64 54 64 78 C 64 100 32 108 0 100"/></g>
+    <g transform="translate(80,0)"><path d="M0 0 L 24 54 L 48 0 M 24 54 L 24 100"/></g>
+    <g transform="translate(150,0)"><path d="M0 65 L 0 0 M 0 20 C 15 0 48 0 48 30 L 48 65"/></g>
+    <g transform="translate(220,0)"><path d="M55 13 C 32 0 0 9 0 32 C 0 56 32 65 55 53"/></g>
+    <g transform="translate(290,0)"><path d="M0 0 L 15 65 L 32 24 L 49 65 L 64 0"/></g>
+    <g transform="translate(370,0)"><path d="M55 20 C 32 0 0 0 0 32 C 0 65 32 65 55 45 M 55 0 L 55 65"/></g>
+    <g transform="translate(440,0)"><path d="M0 0 L 24 65 L 48 0"/></g>
+    <g transform="translate(500,0)"><path d="M0 32 L 55 32 C 55 0 0 0 0 32 C 0 65 55 65 55 53"/></g>
+  </g>
+</svg>

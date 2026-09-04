@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 220" role="img" aria-label="SyncWave">
+  <title>SyncWave (inverse)</title>
+  <rect width="1080" height="220" fill="#000"/>
+
+  <g transform="translate(20,50)" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 60 C 26 26 52 26 78 60 S 130 94 156 60 S 208 26 234 60 S 286 94 312 60 S 364 26 390 60 S 442 94 468 60"/>
+    <path d="M0 94 C 26 60 52 60 78 94 S 130 128 156 94 S 208 60 234 94 S 286 128 312 94 S 364 60 390 94 S 442 128 468 94"/>
+  </g>
+  <circle cx="488" cy="110" r="9" fill="#fff"/>
+
+  <g transform="translate(540,70)" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="translate(0,0)"><path d="M50 7 C 25 0 0 7 0 25 C 0 45 50 45 50 65 C 50 83 25 90 0 83"/></g>
+    <g transform="translate(64,0)"><path d="M0 0 L 19 45 L 38 0 M 19 45 L 19 83"/></g>
+    <g transform="translate(120,0)"><path d="M0 53 L 0 0 M 0 17 C 13 0 40 0 40 25 L 40 53"/></g>
+    <g transform="translate(180,0)"><path d="M46 11 C 27 0 0 8 0 27 C 0 47 27 54 46 45"/></g>
+    <g transform="translate(238,0)"><path d="M0 0 L 13 53 L 27 20 L 41 53 L 54 0"/></g>
+    <g transform="translate(308,0)"><path d="M46 17 C 27 0 0 0 0 27 C 0 54 27 54 46 38 M 46 0 L 46 53"/></g>
+    <g transform="translate(370,0)"><path d="M0 0 L 20 53 L 40 0"/></g>
+    <g transform="translate(425,0)"><path d="M0 27 L 46 27 C 46 0 0 0 0 27 C 0 54 46 54 46 45"/></g>
+  </g>
+</svg>

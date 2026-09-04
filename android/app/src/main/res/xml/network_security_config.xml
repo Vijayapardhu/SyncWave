@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+        V0.1 talks to a plain HTTP dev server on the LAN. Production
+        (Vercel) is HTTPS, so release builds do not need this. We restrict
+        cleartext to private network ranges so we don't accidentally weaken
+        the rest of the app.
+    -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.0.2.2</domain>     <!-- emulator host -->
+        <domain includeSubdomains="true">10.0.0.0</domain>      <!-- private -->
+        <domain includeSubdomains="true">192.168.0.0</domain>    <!-- private -->
+        <domain includeSubdomains="true">172.16.0.0</domain>    <!-- private -->
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

@@ -1,0 +1,13 @@
+{
+  "name": "syncwave-branding",
+  "private": true,
+  "version": "0.1.0",
+  "description": "SyncWave logo and brand assets. SVG sources rasterized via headless Chrome + sharp.",
+  "scripts": {
+    "render": "node render.js"
+  },
+  "dependencies": {
+    "puppeteer-core": "^25.10.0",
+    "sharp": "^0.35.4"
+  }
+}

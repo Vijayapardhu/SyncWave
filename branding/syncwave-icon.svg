@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SyncWave icon">
+  <title>SyncWave</title>
+
+  <!-- Transparent background; let Android apply the adaptive background. -->
+  <g fill="none" stroke="#000" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Filled wave (top half) -->
+    <path d="M40 220
+             C 90 120, 150 120, 200 220
+             S 320 360, 380 260
+             S 472 180, 472 180"/>
+    <!-- Outlined wave (bottom half, offset) -->
+    <path d="M40 300
+             C 90 200, 150 200, 200 300
+             S 320 440, 380 340
+             S 472 260, 472 260"/>
+  </g>
+
+  <!-- Sync dot at the meeting point -->
+  <circle cx="472" cy="220" r="22" fill="#000"/>
+</svg>
