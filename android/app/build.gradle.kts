@@ -49,8 +49,6 @@ dependencies {
     implementation(project(":core:webrtc"))
     implementation(project(":core:media"))
     implementation(project(":feature:home"))
-    implementation(project(":feature:host"))
-    implementation(project(":feature:receiver"))
     implementation(project(":feature:room"))
     implementation(project(":feature:audio"))
     implementation(project(":feature:scan"))

@@ -1,9 +1,7 @@
 package com.syncwave.feature.audio
 
 import android.app.Activity
-import android.content.Intent
 import android.Manifest
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -11,23 +9,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,19 +39,7 @@ fun AudioShareScreen(onBack: () -> Unit, vm: AudioHostViewModel = viewModel()) {
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            val ready = state as? AudioHostState.Ready ?: return@rememberLauncherForActivityResult
-            vm.startSharing(Activity.RESULT_OK, Intent(), ready.mode)
-        }
-    }
-
-    val projectionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val mode = (state as? AudioHostState.Ready)?.mode
-            ?: (state as? AudioHostState.Sharing)?.mode
-            ?: AudioSourceMode.MIC
-        if (mode != AudioSourceMode.MIC) {
-            vm.startSharing(result.resultCode, result.data, mode)
+            vm.startSharing(Activity.RESULT_OK, null)
         }
     }
 
@@ -120,33 +100,10 @@ fun AudioShareScreen(onBack: () -> Unit, vm: AudioHostViewModel = viewModel()) {
 
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (state is AudioHostState.Ready) {
-                    val current = (state as AudioHostState.Ready).mode
-                    ModeRow(
-                        label = "MICROPHONE",
-                        description = "Capture your voice from the device mic.",
-                        selected = current == AudioSourceMode.MIC,
-                        onSelect = { vm.setMode(AudioSourceMode.MIC) },
-                    )
-                    ModeRow(
-                        label = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-                            "SYSTEM AUDIO" else "SYSTEM AUDIO (ANDROID 10+)",
-                        description = "Capture whatever the device is playing.",
-                        selected = current == AudioSourceMode.SYSTEM,
-                        enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q,
-                        onSelect = { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) vm.setMode(AudioSourceMode.SYSTEM) },
-                    )
                     SwButton(
                         label = "START SHARING",
                         onClick = {
-                            val ready = state as? AudioHostState.Ready ?: return@SwButton
-                            when (ready.mode) {
-                                AudioSourceMode.MIC -> {
-                                    micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                                }
-                                AudioSourceMode.SYSTEM -> {
-                                    projectionLauncher.launch(vm.projectionRequester.createIntent())
-                                }
-                            }
+                            micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                         },
                     )
                 }
@@ -165,44 +122,6 @@ fun AudioShareScreen(onBack: () -> Unit, vm: AudioHostViewModel = viewModel()) {
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun ModeRow(
-    label: String,
-    description: String,
-    selected: Boolean,
-    enabled: Boolean = true,
-    onSelect: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(if (selected) SwColors.Paper else SwColors.Coal)
-            .padding(16.dp)
-            .selectable(selected = selected, enabled = enabled, onClick = onSelect),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(14.dp)
-                .background(if (selected) SwColors.Ink else SwColors.Slate),
-        )
-        Spacer(Modifier.width(16.dp))
-        Column {
-            Text(
-                label,
-                color = if (selected) SwColors.Ink else SwColors.Paper,
-                fontWeight = FontWeight.Black,
-                fontSize = 12.sp,
-            )
-            Text(
-                description,
-                color = if (selected) SwColors.Ink else SwColors.Slate,
-                fontSize = 12.sp,
-            )
         }
     }
 }

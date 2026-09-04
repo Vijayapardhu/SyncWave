@@ -15,8 +15,6 @@ import com.syncwave.core.network.BuildConfigCompat
 import com.syncwave.feature.audio.AudioGuestScreen
 import com.syncwave.feature.audio.AudioShareScreen
 import com.syncwave.feature.home.HomeScreen
-import com.syncwave.feature.host.HostScreen
-import com.syncwave.feature.receiver.ReceiverScreen
 import com.syncwave.feature.room.RoomCodeScreen
 import com.syncwave.feature.scan.QrScannerScreen
 
@@ -32,17 +30,16 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController = nav, startDestination = "home") {
                         composable("home") {
                             HomeScreen(
-                                onHost = { nav.navigate("host") },
+                                onHost = { nav.navigate("audio") },
                                 onJoin = { nav.navigate("join") },
                                 onAudio = { nav.navigate("audio") }
                             )
                         }
-                        composable("host") { HostScreen(onBack = { nav.popBackStack() }) }
                         composable("audio") { AudioShareScreen(onBack = { nav.popBackStack() }) }
                         composable("join") {
                             RoomCodeScreen(
                                 onCancel = { nav.popBackStack() },
-                                onJoined = { code -> nav.navigate("receiver/$code") },
+                                onJoined = { code -> nav.navigate("audio_guest/$code") },
                                 onJoinAudio = { code -> nav.navigate("audio_guest/$code") },
                                 onScan = { nav.navigate("scan") }
                             )
@@ -50,7 +47,7 @@ class MainActivity : ComponentActivity() {
                         composable("scan") {
                             QrScannerScreen(
                                 onCode = { code ->
-                                    nav.navigate("receiver/$code") { popUpTo("join") }
+                                    nav.navigate("audio_guest/$code") { popUpTo("join") }
                                 },
                                 onCancel = { nav.popBackStack() }
                             )
@@ -58,10 +55,6 @@ class MainActivity : ComponentActivity() {
                         composable("audio_guest/{code}") { entry ->
                             val code = entry.arguments?.getString("code").orEmpty()
                             AudioGuestScreen(roomCode = code, onBack = { nav.popBackStack() })
-                        }
-                        composable("receiver/{code}") { entry ->
-                            val code = entry.arguments?.getString("code").orEmpty()
-                            ReceiverScreen(roomCode = code, onBack = { nav.popBackStack() })
                         }
                     }
                 }

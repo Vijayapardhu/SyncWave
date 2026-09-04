@@ -51,7 +51,7 @@ fun HomeScreen(onHost: () -> Unit, onJoin: () -> Unit, onAudio: () -> Unit) {
                     style = SwType.label,
                 )
                 Text(
-                    "Share your screen or audio with anyone nearby. No accounts. No installs.",
+                    "Share audio with anyone nearby. No accounts. No installs.",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = SwColors.Slate,
@@ -68,14 +68,14 @@ fun HomeScreen(onHost: () -> Unit, onJoin: () -> Unit, onAudio: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        "ROOM",
+                        "AUDIO",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Black,
                         color = SwColors.Slate,
                         style = SwType.label,
                     )
                     Text(
-                        "Watch & listen together.",
+                        "Listen together.",
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Black,
                         color = SwColors.Paper,
@@ -97,14 +97,9 @@ fun HomeScreen(onHost: () -> Unit, onJoin: () -> Unit, onAudio: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 SwButton(
-                    label = "SHARE SCREEN",
-                    onClick = onHost,
-                    variant = ButtonVariant.PRIMARY,
-                )
-                SwButton(
                     label = "SHARE AUDIO",
                     onClick = onAudio,
-                    inverted = true,
+                    variant = ButtonVariant.PRIMARY,
                 )
                 SwButton(
                     label = "JOIN ROOM",
@@ -128,7 +123,7 @@ fun HomeScreen(onHost: () -> Unit, onJoin: () -> Unit, onAudio: () -> Unit) {
                     listOf(
                         "Direct peer-to-peer connection. No relay.",
                         "Room codes are six characters. QR scan supported.",
-                        "Audio-only mode works on Android 10+.",
+                        "Choose microphone or system audio capture.",
                     ).forEach { line ->
                         Text(
                             line,
