@@ -17,6 +17,7 @@ import com.syncwave.feature.home.HomeScreen
 import com.syncwave.feature.host.HostScreen
 import com.syncwave.feature.receiver.ReceiverScreen
 import com.syncwave.feature.room.RoomCodeScreen
+import com.syncwave.feature.scan.QrScannerScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,7 +42,15 @@ class MainActivity : ComponentActivity() {
                                 onCancel = { nav.popBackStack() },
                                 onJoined = { code -> nav.navigate("receiver/$code") },
                                 onJoinAudio = { code -> nav.navigate("audio_guest/$code") },
-                                onScan = { /* TODO: open QR scanner */ }
+                                onScan = { nav.navigate("scan") }
+                            )
+                        }
+                        composable("scan") {
+                            QrScannerScreen(
+                                onCode = { code ->
+                                    nav.navigate("receiver/$code") { popUpTo("join") }
+                                },
+                                onCancel = { nav.popBackStack() }
                             )
                         }
                         composable("audio_guest/{code}") { entry ->

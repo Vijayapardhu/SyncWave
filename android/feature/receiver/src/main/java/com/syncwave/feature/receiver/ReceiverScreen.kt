@@ -156,23 +156,9 @@ private fun ReceiverControls(onLeave: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         SwButton(
-            label = "MUTE",
-            onClick = {},
-            modifier = Modifier.weight(1f),
-            enabled = false,
-            inverted = true,
-        )
-        SwButton(
-            label = "AUDIO",
-            onClick = {},
-            modifier = Modifier.weight(1f),
-            enabled = false,
-            inverted = true,
-        )
-        SwButton(
             label = "LEAVE",
             onClick = onLeave,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.fillMaxWidth(),
             variant = ButtonVariant.DANGER,
         )
     }

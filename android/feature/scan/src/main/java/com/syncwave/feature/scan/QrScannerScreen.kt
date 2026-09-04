@@ -62,6 +62,7 @@ fun QrScannerScreen(
                 == PackageManager.PERMISSION_GRANTED
         )
     }
+    var hasEmitted by remember { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> hasPermission = granted }
@@ -74,7 +75,12 @@ fun QrScannerScreen(
         if (hasPermission) {
             CameraPreview(
                 onResult = { raw ->
-                    QrPayload.extractCode(raw)?.let(onCode)
+                    if (!hasEmitted) {
+                        QrPayload.extractCode(raw)?.let { code ->
+                            hasEmitted = true
+                            onCode(code)
+                        }
+                    }
                 },
                 modifier = Modifier.fillMaxSize()
             )

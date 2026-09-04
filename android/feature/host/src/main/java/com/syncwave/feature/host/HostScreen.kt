@@ -37,7 +37,6 @@ import com.syncwave.core.ui.components.GradientPanel
 import com.syncwave.core.ui.components.SwButton
 import com.syncwave.core.ui.components.SwPanel
 import com.syncwave.core.ui.components.SwStatusPill
-import com.syncwave.core.media.ShareForegroundService
 import com.syncwave.core.ui.qr.QrPayload
 import com.syncwave.core.ui.qr.encodeQrCode
 
@@ -83,12 +82,10 @@ fun HostScreen(
             HostActions(
                 state = state,
                 onStart = {
-                    ShareForegroundService.start(context)
                     projectionLauncher.launch(requester.createIntent())
                 },
                 onStop  = {
                     vm.stopSharing()
-                    ShareForegroundService.stop(context)
                 },
                 onBack  = onBack,
             )

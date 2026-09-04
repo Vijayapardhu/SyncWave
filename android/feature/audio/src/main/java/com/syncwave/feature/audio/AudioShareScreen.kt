@@ -1,6 +1,9 @@
 package com.syncwave.feature.audio
 
+import android.app.Activity
 import android.content.Intent
+import android.Manifest
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -29,11 +32,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import android.Manifest
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult as rememberPermLauncher
-import androidx.activity.result.contract.ActivityResultContracts as PermContracts
-import com.syncwave.core.media.ShareForegroundService
 import com.syncwave.core.ui.SwColors
 import com.syncwave.core.ui.SwMono
 import com.syncwave.core.ui.SwType
@@ -44,11 +42,15 @@ import com.syncwave.core.ui.components.SwPanel
 @Composable
 fun AudioShareScreen(onBack: () -> Unit, vm: AudioHostViewModel = viewModel()) {
     val state by vm.state.collectAsState()
-    val context = LocalContext.current
 
-    val micPermissionLauncher = rememberPermLauncher(
-        PermContracts.RequestPermission()
-    ) { granted -> if (!granted) { /* stay on Ready; user can switch to SYSTEM or back */ } }
+    val micPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            val ready = state as? AudioHostState.Ready ?: return@rememberLauncherForActivityResult
+            vm.startSharing(Activity.RESULT_OK, Intent(), ready.mode)
+        }
+    }
 
     val projectionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -56,9 +58,7 @@ fun AudioShareScreen(onBack: () -> Unit, vm: AudioHostViewModel = viewModel()) {
         val mode = (state as? AudioHostState.Ready)?.mode
             ?: (state as? AudioHostState.Sharing)?.mode
             ?: AudioSourceMode.MIC
-        if (mode == AudioSourceMode.MIC) {
-            vm.startSharing(android.app.Activity.RESULT_OK, Intent(), mode)
-        } else {
+        if (mode != AudioSourceMode.MIC) {
             vm.startSharing(result.resultCode, result.data, mode)
         }
     }
@@ -139,11 +139,9 @@ fun AudioShareScreen(onBack: () -> Unit, vm: AudioHostViewModel = viewModel()) {
                         label = "START SHARING",
                         onClick = {
                             val ready = state as? AudioHostState.Ready ?: return@SwButton
-                            ShareForegroundService.start(context)
                             when (ready.mode) {
                                 AudioSourceMode.MIC -> {
                                     micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                                    vm.startSharing(android.app.Activity.RESULT_OK, Intent(), ready.mode)
                                 }
                                 AudioSourceMode.SYSTEM -> {
                                     projectionLauncher.launch(vm.projectionRequester.createIntent())
@@ -155,20 +153,14 @@ fun AudioShareScreen(onBack: () -> Unit, vm: AudioHostViewModel = viewModel()) {
                 if (state is AudioHostState.Sharing) {
                     SwButton(
                         label = "STOP SHARING",
-                        onClick = {
-                            vm.stopSharing()
-                            ShareForegroundService.stop(context)
-                        },
+                        onClick = { vm.stopSharing() },
                         variant = ButtonVariant.DANGER,
                     )
                 }
                 if (state is AudioHostState.Creating || state is AudioHostState.Error) {
                     SwButton(
                         label = "BACK",
-                        onClick = {
-                            if (state is AudioHostState.Error) ShareForegroundService.stop(context)
-                            onBack()
-                        },
+                        onClick = onBack,
                         inverted = true,
                     )
                 }

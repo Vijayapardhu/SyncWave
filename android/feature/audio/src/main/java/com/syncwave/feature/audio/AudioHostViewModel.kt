@@ -68,14 +68,14 @@ class AudioHostViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun startSharing(resultCode: Int, data: Intent?, mode: AudioSourceMode) {
+        if (session != null) return
         val code = roomCode ?: return
         val hid = hostId ?: return
         if (resultCode != android.app.Activity.RESULT_OK || data == null) {
             _state.value = AudioHostState.Error("permission_denied")
             return
         }
-        // Start the mediaProjection FGS before any getMediaProjection() call.
-        ShareForegroundService.start(getApplication())
+        ShareForegroundService.start(getApplication(), ShareForegroundService.MODE_AUDIO)
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val signaling = VercelLongPollSignaling(api, code, hid)
@@ -128,6 +128,7 @@ class AudioHostViewModel(app: Application) : AndroidViewModel(app) {
         systemEncoder = null
         session?.close()
         session = null
+        ShareForegroundService.stop(getApplication())
         val code = roomCode
         val s = _state.value
         val mode = when (s) {

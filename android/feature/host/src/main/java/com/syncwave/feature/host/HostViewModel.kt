@@ -56,16 +56,14 @@ class HostViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun startSharing(resultCode: Int, data: Intent?) {
+        if (session != null) return
         val code = roomCode ?: return
         val hid = hostId ?: return
         if (resultCode != android.app.Activity.RESULT_OK || data == null) {
             _state.value = HostState.Error("permission_denied")
             return
         }
-        // Android 14+ requires the mediaProjection foreground service to be
-        // started before getMediaProjection() is invoked. Start it now so the
-        // subsequent capturer.initialize/startCapture path is legal.
-        ShareForegroundService.start(getApplication())
+        ShareForegroundService.start(getApplication(), ShareForegroundService.MODE_SCREEN)
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val signaling = VercelLongPollSignaling(api, code, hid)
