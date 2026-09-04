@@ -33,6 +33,12 @@ class SyncWaveApi(
 
     private val jsonType = "application/json".toMediaType()
 
+    private fun url(path: String): String {
+        val url = baseUrl + path
+        Log.w(TAG, "url=$url")
+        return url
+    }
+
     suspend fun createRoom(deviceName: String): CreateRoomResponse = withContext(Dispatchers.IO) {
         val body = JSONObject().put("deviceName", deviceName).toString()
         Log.w(TAG, "createRoom body=$body")
@@ -95,18 +101,23 @@ class SyncWaveApi(
 
     suspend fun pollSignals(roomId: String, peer: String): List<SignalEnvelopeDto> = withContext(Dispatchers.IO) {
         Log.w(TAG, "pollSignals roomId=$roomId peer=$peer")
-        val res = get("/api/signaling?roomId=$roomId&peer=$peer")
-        Log.w(TAG, "pollSignals res=$res")
-        val arr = res.optJSONArray("signals") ?: return@withContext emptyList()
-        List(arr.length()) { i ->
-            val o = arr.getJSONObject(i)
-            SignalEnvelopeDto(
-                type = SignalType.valueOf(o.getString("type")),
-                from = o.getString("from"),
-                to = o.optString("to", null).ifEmpty { null },
-                payloadJson = o.optJSONObject("payload")?.toString(),
-                ts = o.optLong("ts", 0L)
-            )
+        try {
+            val res = get("/api/signaling?roomId=$roomId&peer=$peer")
+            Log.w(TAG, "pollSignals res=$res")
+            val arr = res.optJSONArray("signals") ?: return@withContext emptyList()
+            List(arr.length()) { i ->
+                val o = arr.getJSONObject(i)
+                SignalEnvelopeDto(
+                    type = SignalType.valueOf(o.getString("type")),
+                    from = o.getString("from"),
+                    to = o.optString("to", null).ifEmpty { null },
+                    payloadJson = o.optJSONObject("payload")?.toString(),
+                    ts = o.optLong("ts", 0L)
+                )
+            }
+        } catch (t: Throwable) {
+            Log.w(TAG, "pollSignals failed baseUrl=$baseUrl", t)
+            emptyList()
         }
     }
 

@@ -54,7 +54,57 @@ export async function bufferSignal(roomId: string, signal: SignalEnvelope): Prom
   }
 
   const key = `signals:${roomId}`;
-  await kv.lpush(key, JSON.stringify(signal));
+  const raw = JSON.stringify(signal);
+  await kv.lpush(key, raw);
+  await kv.ltrim(key, 0, MAX_BUFFER - 1);
+  await kv.expire(key, SIGNAL_TTL_SECONDS);
+}
+
+export async function drainSignals(roomId: string, forPeer: string): Promise<SignalEnvelope[]> {
+  if (!hasKv()) {
+    const mem = memDrain(roomId, forPeer);
+    console.log(`[signaling] memDrain room=${roomId} peer=${forPeer} count=${mem.length}`);
+    return mem;
+  }
+
+  const key = `signals:${roomId}`;
+  const raw = (await kv.lrange(key, 0, -1)) as Array<string | SignalEnvelope> | null;
+  console.log(`[signaling] drain room=${roomId} peer=${forPeer} rawCount=${raw?.length ?? 0}`);
+  if (!raw || raw.length === 0) return [];
+
+  const all: SignalEnvelope[] = raw.map(s =>
+    typeof s === "string" ? (JSON.parse(s) as SignalEnvelope) : s
+  );
+  const delivered: SignalEnvelope[] = [];
+  const keepStrings: string[] = [];
+
+  for (let i = 0; i < all.length; i++) {
+    const env = all[i];
+    const original = raw[i];
+    if (env.from === forPeer) continue;
+    if (env.to === undefined || env.to === null || env.to === forPeer) {
+      delivered.push(env);
+    } else {
+      keepStrings.push(typeof original === "string" ? original : JSON.stringify(original));
+    }
+  }
+
+  console.log(`[signaling] drain room=${roomId} peer=${forPeer} delivered=${delivered.length} kept=${keepStrings.length}`);
+
+  if (keepStrings.length === 0) {
+    await kv.del(key);
+  } else {
+    await kv.del(key);
+    await kv.lpush(key, ...keepStrings);
+    await kv.expire(key, SIGNAL_TTL_SECONDS);
+  }
+
+  return delivered;
+}
+
+  const key = `signals:${roomId}`;
+  const raw = JSON.stringify(signal);
+  await kv.lpush(key, raw);
   await kv.ltrim(key, 0, MAX_BUFFER - 1);
   await kv.expire(key, SIGNAL_TTL_SECONDS);
 }
@@ -63,8 +113,6 @@ export async function drainSignals(roomId: string, forPeer: string): Promise<Sig
   if (!hasKv()) return memDrain(roomId, forPeer);
 
   const key = `signals:${roomId}`;
-  // Read all currently-buffered envelopes, oldest first. @vercel/kv may
-  // either return raw strings or auto-parsed JSON objects.
   const raw = (await kv.lrange(key, 0, -1)) as Array<string | SignalEnvelope> | null;
   if (!raw || raw.length === 0) return [];
 
@@ -77,12 +125,10 @@ export async function drainSignals(roomId: string, forPeer: string): Promise<Sig
   for (let i = 0; i < all.length; i++) {
     const env = all[i];
     const original = raw[i];
-    if (env.from === forPeer) continue; // never echo back
+    if (env.from === forPeer) continue;
     if (env.to === undefined || env.to === null || env.to === forPeer) {
       delivered.push(env);
     } else {
-      // Re-serialize so we can lpush the survivors back. This is a small
-      // CPU cost but keeps the wire format consistent for V0.1.
       keepStrings.push(typeof original === "string" ? original : JSON.stringify(original));
     }
   }
