@@ -1,6 +1,6 @@
 # SyncWave
 
-![SyncWave banner](branding/out/readme-header-1280.png)
+![SyncWave banner](https://github.com/Vijayapardhu/SyncWave/blob/master/branding/syncwave-readme-header.svg)
 
 Watch and listen together, in real time. One Android device becomes the host and shares its screen + system audio over WebRTC. Other devices join via a short room code (QR or typed) and receive the stream peer-to-peer.
 
