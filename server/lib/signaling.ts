@@ -15,7 +15,9 @@ const MAX_BUFFER = 50;
 const SIGNAL_TTL_SECONDS = 6 * 60 * 60; // match room TTL
 
 function hasKv(): boolean {
-  return Boolean(process.env.KV_URL || process.env.KV_REST_API_URL);
+  const has = Boolean(process.env.KV_URL || process.env.KV_REST_API_URL);
+  console.log(`[signaling] hasKv=${has}`);
+  return has;
 }
 
 // --- In-memory fallback ---------------------------------------------------
@@ -48,6 +50,7 @@ function memDrain(roomId: string, forPeer: string): SignalEnvelope[] {
 // --- Public API -----------------------------------------------------------
 
 export async function bufferSignal(roomId: string, signal: SignalEnvelope): Promise<void> {
+  console.log(`[signaling] bufferSignal room=${roomId} from=${signal.from} to=${signal.to} type=${signal.type}`);
   if (!hasKv()) {
     memBuffer(roomId, signal);
     return;
@@ -58,6 +61,7 @@ export async function bufferSignal(roomId: string, signal: SignalEnvelope): Prom
   await kv.lpush(key, raw);
   await kv.ltrim(key, 0, MAX_BUFFER - 1);
   await kv.expire(key, SIGNAL_TTL_SECONDS);
+  console.log(`[signaling] buffered room=${roomId} key=${key}`);
 }
 
 export async function drainSignals(roomId: string, forPeer: string): Promise<SignalEnvelope[]> {
@@ -69,7 +73,7 @@ export async function drainSignals(roomId: string, forPeer: string): Promise<Sig
 
   const key = `signals:${roomId}`;
   const raw = (await kv.lrange(key, 0, -1)) as Array<string | SignalEnvelope> | null;
-  console.log(`[signaling] drain room=${roomId} peer=${forPeer} rawCount=${raw?.length ?? 0}`);
+  console.log(`[signaling] drain room=${roomId} peer=${forPeer} key=${key} rawCount=${raw?.length ?? 0}`);
   if (!raw || raw.length === 0) return [];
 
   const all: SignalEnvelope[] = raw.map(s =>
@@ -81,6 +85,7 @@ export async function drainSignals(roomId: string, forPeer: string): Promise<Sig
   for (let i = 0; i < all.length; i++) {
     const env = all[i];
     const original = raw[i];
+    console.log(`[signaling] checking signal from=${env.from} to=${env.to} forPeer=${forPeer}`);
     if (env.from === forPeer) continue;
     if (env.to === undefined || env.to === null || env.to === forPeer) {
       delivered.push(env);
