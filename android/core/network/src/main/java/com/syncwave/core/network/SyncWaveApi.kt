@@ -110,7 +110,7 @@ class SyncWaveApi(
                 SignalEnvelopeDto(
                     type = SignalType.valueOf(o.getString("type")),
                     from = o.getString("from"),
-                    to = o.optString("to", null).ifEmpty { null },
+                    to = o.optString("to", null)?.ifEmpty { null },
                     payloadJson = o.optJSONObject("payload")?.toString(),
                     ts = o.optLong("ts", 0L)
                 )
