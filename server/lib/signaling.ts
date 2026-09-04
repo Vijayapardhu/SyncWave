@@ -85,12 +85,18 @@ export async function drainSignals(roomId: string, forPeer: string): Promise<Sig
   for (let i = 0; i < all.length; i++) {
     const env = all[i];
     const original = raw[i];
+    const str = typeof original === "string" ? original : JSON.stringify(original);
     console.log(`[signaling] checking signal from=${env.from} to=${env.to} forPeer=${forPeer}`);
-    if (env.from === forPeer) continue;
+
+    if (env.from === forPeer) {
+      keepStrings.push(str);
+      continue;
+    }
+
     if (env.to === undefined || env.to === null || env.to === forPeer) {
       delivered.push(env);
     } else {
-      keepStrings.push(typeof original === "string" ? original : JSON.stringify(original));
+      keepStrings.push(str);
     }
   }
 
