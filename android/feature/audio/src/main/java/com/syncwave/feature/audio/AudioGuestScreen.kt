@@ -37,6 +37,12 @@ fun AudioGuestScreen(
     var code by remember { mutableStateOf(roomCode.orEmpty()) }
     val activeCode = code.ifBlank { roomCode.orEmpty() }
 
+    LaunchedEffect(roomCode) {
+        if (!roomCode.isNullOrBlank() && state == com.syncwave.feature.audio.AudioGuestState.Idle) {
+            vm.join(roomCode.trim())
+        }
+    }
+
     DisposableEffect(Unit) { onDispose { vm.leave() } }
 
     Column(
