@@ -36,13 +36,17 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("host") { HostScreen(onBack = { nav.popBackStack() }) }
                         composable("audio") { AudioShareScreen(onBack = { nav.popBackStack() }) }
-                        composable("audio_guest") { AudioGuestScreen(onBack = { nav.popBackStack() }) }
                         composable("join") {
                             RoomCodeScreen(
                                 onCancel = { nav.popBackStack() },
                                 onJoined = { code -> nav.navigate("receiver/$code") },
+                                onJoinAudio = { code -> nav.navigate("audio_guest/$code") },
                                 onScan = { /* TODO: open QR scanner */ }
                             )
+                        }
+                        composable("audio_guest/{code}") { entry ->
+                            val code = entry.arguments?.getString("code").orEmpty()
+                            AudioGuestScreen(roomCode = code, onBack = { nav.popBackStack() })
                         }
                         composable("receiver/{code}") { entry ->
                             val code = entry.arguments?.getString("code").orEmpty()

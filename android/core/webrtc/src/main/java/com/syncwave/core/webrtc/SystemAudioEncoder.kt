@@ -86,7 +86,7 @@ class SystemAudioEncoder(
         val format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_OPUS, sampleRate, channels)
             .apply {
                 setInteger(MediaFormat.KEY_BIT_RATE, 64_000)
-                setInteger(MediaFormat.KEY_PCM_ENCODING, MediaRecorder.AudioSource.REMOTE_SUBMIX)
+                setInteger(MediaFormat.KEY_CHANNEL_MASK, AudioFormat.CHANNEL_IN_STEREO)
                 setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, minBuf * 2)
             }
         val enc = MediaCodec.createByCodecName(opusName)

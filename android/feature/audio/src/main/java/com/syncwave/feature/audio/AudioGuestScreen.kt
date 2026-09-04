@@ -11,12 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -25,11 +25,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.syncwave.core.ui.SwColors
 import com.syncwave.core.ui.SwType
 import com.syncwave.core.ui.components.SwButton
+import com.syncwave.core.ui.components.SwPanel
 
 @Composable
-fun AudioGuestScreen(onBack: () -> Unit, vm: AudioGuestViewModel = viewModel()) {
+fun AudioGuestScreen(
+    onBack: () -> Unit,
+    roomCode: String? = null,
+    vm: AudioGuestViewModel = viewModel(),
+) {
     val state by vm.state.collectAsState()
-    var code by remember { mutableStateOf("") }
+    var code by remember { mutableStateOf(roomCode.orEmpty()) }
+    val activeCode = code.ifBlank { roomCode.orEmpty() }
 
     DisposableEffect(Unit) { onDispose { vm.leave() } }
 
@@ -46,7 +52,6 @@ fun AudioGuestScreen(onBack: () -> Unit, vm: AudioGuestViewModel = viewModel()) 
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.Start,
         ) {
             Text(
                 "ROOM CODE",
@@ -94,8 +99,8 @@ fun AudioGuestScreen(onBack: () -> Unit, vm: AudioGuestViewModel = viewModel()) 
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SwButton(
                 label = if (state is AudioGuestState.Joining) "JOINING..." else "JOIN",
-                onClick = { if (code.isNotBlank()) vm.join(code.trim()) },
-                enabled = code.isNotBlank() && state !is AudioGuestState.Joining,
+                onClick = { if (activeCode.isNotBlank()) vm.join(activeCode.trim()) },
+                enabled = activeCode.isNotBlank() && state !is AudioGuestState.Joining,
             )
             SwButton(label = "BACK", onClick = { vm.leave(); onBack() }, inverted = true)
         }
