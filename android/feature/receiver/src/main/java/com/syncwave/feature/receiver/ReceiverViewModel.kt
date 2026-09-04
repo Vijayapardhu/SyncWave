@@ -21,50 +21,83 @@ import kotlinx.coroutines.launch
 import org.webrtc.AudioTrack
 import org.webrtc.VideoTrack
 
+enum class SignalQuality {
+    NONE,
+    WEAK,
+    MEDIUM,
+    STRONG
+}
+
 sealed interface ReceiverState {
+    data object Idle : ReceiverState
     data object Joining : ReceiverState
-    data class Connected(val video: VideoTrack?, val audio: AudioTrack?) : ReceiverState
+    data object Signaling : ReceiverState
+    data object IceChecking : ReceiverState
+    data class Connected(val video: VideoTrack?, val audio: AudioTrack?, val signal: SignalQuality = SignalQuality.MEDIUM) : ReceiverState
     data class Error(val message: String) : ReceiverState
 }
 
 class ReceiverViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val _state = MutableStateFlow<ReceiverState>(ReceiverState.Joining)
+    private val _state = MutableStateFlow<ReceiverState>(ReceiverState.Idle)
     val state: StateFlow<ReceiverState> = _state.asStateFlow()
+
+    private val _signalQuality = MutableStateFlow(SignalQuality.NONE)
+    val signalQuality: StateFlow<SignalQuality> = _signalQuality.asStateFlow()
 
     private val api = SyncWaveApi(BuildConfigCompat.baseUrl())
     private var session: PeerSession? = null
     private var systemDecoder: SystemAudioDecoder? = null
+    private var iceCheckStart: Long = 0
 
     fun join(code: String) {
+        _state.value = ReceiverState.Joining
+        _signalQuality.value = SignalQuality.NONE
         viewModelScope.launch(Dispatchers.IO) {
             runCatching { api.joinRoom(code, "Guest") }
                 .onFailure { _state.value = ReceiverState.Error(it.message ?: "join_failed"); return@launch }
                 .onSuccess { resp ->
+                    _state.value = ReceiverState.Signaling
                     WebRtcGlobals.init(getApplication())
                     val signaling = VercelLongPollSignaling(api, resp.roomId, resp.guestId)
                     val peer = PeerSession(getApplication(), signaling, PeerRole.GUEST).also { session = it }
                     peer.start(viewModelScope)
-                    observe(peer, resp.hostId)
+                    observe(peer)
                 }
         }
     }
 
-    private fun observe(peer: PeerSession, hostId: String) {
-        // Observe events and error state
+    private fun observe(peer: PeerSession) {
         viewModelScope.launch {
             peer.events.collect { ev ->
-                if (ev is PeerEvent.Failure) {
-                    _state.value = ReceiverState.Error(ev.cause)
+                when (ev) {
+                    is PeerEvent.Connected -> {
+                        _state.value = ReceiverState.Connected(
+                            video = peer.remoteVideoTrack.value,
+                            audio = peer.remoteAudioTrack.value,
+                            signal = SignalQuality.STRONG
+                        )
+                        _signalQuality.value = SignalQuality.STRONG
+                    }
+                    is PeerEvent.Disconnected -> {
+                        _signalQuality.value = SignalQuality.WEAK
+                        if (_state.value is ReceiverState.Connected) {
+                            _state.value = ReceiverState.IceChecking
+                        }
+                    }
+                    is PeerEvent.Failure -> {
+                        _state.value = ReceiverState.Error(ev.cause)
+                        _signalQuality.value = SignalQuality.NONE
+                    }
+                    else -> Unit
                 }
             }
         }
-        
-        // Combine video and audio track updates to avoid race conditions
+
         viewModelScope.launch {
             combine(peer.remoteVideoTrack, peer.remoteAudioTrack) { video, audio ->
                 if (video != null || audio != null) {
-                    ReceiverState.Connected(video, audio)
+                    ReceiverState.Connected(video, audio, _signalQuality.value)
                 } else {
                     _state.value
                 }
@@ -74,7 +107,15 @@ class ReceiverViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
         }
-        
+
+        viewModelScope.launch {
+            peer.remoteAudioTrack.collect { audio ->
+                if (audio != null && _state.value is ReceiverState.Connected) {
+                    _state.value = (_state.value as ReceiverState.Connected).copy(audio = audio)
+                }
+            }
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             viewModelScope.launch {
                 peer.incomingData.collect { bytes ->
@@ -94,6 +135,8 @@ class ReceiverViewModel(app: Application) : AndroidViewModel(app) {
         systemDecoder = null
         session?.close()
         session = null
+        _state.value = ReceiverState.Idle
+        _signalQuality.value = SignalQuality.NONE
     }
 
     override fun onCleared() {

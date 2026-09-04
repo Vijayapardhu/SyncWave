@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,7 +35,6 @@ import com.syncwave.core.ui.SwColors
 import com.syncwave.core.ui.SwType
 import com.syncwave.core.ui.components.ButtonVariant
 import com.syncwave.core.ui.components.SwButton
-import com.syncwave.core.ui.components.SwStatusPill
 import org.webrtc.RendererCommon
 import org.webrtc.SurfaceViewRenderer
 import org.webrtc.VideoTrack
@@ -46,14 +46,18 @@ fun ReceiverScreen(
     vm: ReceiverViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsState()
+    val signal by vm.signalQuality.collectAsState()
 
     LaunchedEffect(roomCode) { vm.join(roomCode) }
     DisposableEffect(Unit) { onDispose { vm.leave() } }
 
     val (statusLabel, statusActive) = when (val s = state) {
-        is ReceiverState.Joining   -> "CONNECTING" to false
-        is ReceiverState.Connected -> "LIVE" to true
-        is ReceiverState.Error     -> "ERROR" to false
+        is ReceiverState.Idle -> "IDLE" to false
+        is ReceiverState.Joining -> "CONNECTING" to false
+        is ReceiverState.Signaling -> "CALLING" to false
+        is ReceiverState.IceChecking -> "CONNECTING" to false
+        is ReceiverState.Connected -> "CONNECTED" to true
+        is ReceiverState.Error -> "ERROR" to false
     }
 
     Box(
@@ -84,7 +88,17 @@ fun ReceiverScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    SwStatusPill(label = statusLabel, active = statusActive)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        SignalIndicator(quality = signal)
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = statusLabel,
+                            color = SwColors.Paper,
+                            style = SwType.label,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
                     Text(
                         text = roomCode,
                         color = SwColors.Paper,
@@ -116,6 +130,29 @@ fun ReceiverScreen(
                 vm.leave()
                 onBack()
             })
+        }
+    }
+}
+
+@Composable
+private fun SignalIndicator(quality: com.syncwave.feature.receiver.SignalQuality) {
+    val count = when (quality) {
+        com.syncwave.feature.receiver.SignalQuality.NONE -> 0
+        com.syncwave.feature.receiver.SignalQuality.WEAK -> 1
+        com.syncwave.feature.receiver.SignalQuality.MEDIUM -> 2
+        com.syncwave.feature.receiver.SignalQuality.STRONG -> 3
+    }
+    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        repeat(3) { index ->
+            val active = index < count
+            Box(
+                modifier = Modifier
+                    .size(width = 4.dp, height = (8 + index * 4).dp)
+                    .background(
+                        color = if (active) SwColors.Paper else SwColors.Slate,
+                        shape = RoundedCornerShape(1.dp)
+                    )
+            )
         }
     }
 }

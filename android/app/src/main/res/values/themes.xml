@@ -1,20 +1,12 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-
-    <!--
-        Base app theme. Black background, paper ink — strict monochrome
-        to match the brand (white-on-black wave plate).
-    -->
     <style name="Theme.SyncWave" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/syncwave_background</item>
         <item name="android:statusBarColor">@color/syncwave_background</item>
         <item name="android:navigationBarColor">@color/syncwave_background</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
-    <!--
-        Splash screen theme. On Android 12+ the SplashScreen API reads
-        these attributes. On older devices (q- and below) we fall back
-        to the windowBackground drawable.
-    -->
     <style name="Theme.SyncWave.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/syncwave_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/sw_splash_icon</item>

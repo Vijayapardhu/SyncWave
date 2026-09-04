@@ -3,6 +3,7 @@ package com.syncwave
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -22,6 +23,7 @@ import com.syncwave.feature.scan.QrScannerScreen
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         BuildConfigCompat.setBaseUrl(BuildConfig.SYNCWAVE_BASE_URL)
         setContent {
             MaterialTheme {
