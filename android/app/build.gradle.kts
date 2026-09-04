@@ -34,10 +34,10 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "SYNCWAVE_BASE_URL", "\"https://sync-9hmoz1iru-vijayapardhus-projects.vercel.app\"")
+            buildConfigField("String", "SYNCWAVE_BASE_URL", "\"https://sync-gamma-nine.vercel.app\"")
         }
         release {
-            buildConfigField("String", "SYNCWAVE_BASE_URL", "\"https://sync-9hmoz1iru-vijayapardhus-projects.vercel.app\"")
+            buildConfigField("String", "SYNCWAVE_BASE_URL", "\"https://sync-gamma-nine.vercel.app\"")
         }
     }
 }
