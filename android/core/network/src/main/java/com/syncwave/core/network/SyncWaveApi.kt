@@ -1,5 +1,6 @@
 package com.syncwave.core.network
 
+import android.util.Log
 import com.syncwave.core.network.dto.CreateRoomResponse
 import com.syncwave.core.network.dto.JoinRoomResponse
 import com.syncwave.core.network.dto.RoomStateResponse
@@ -23,6 +24,7 @@ import java.util.concurrent.TimeUnit
 class SyncWaveApi(
     private val baseUrl: String
 ) {
+    private val TAG = "SyncWave/Api"
 
     private val http: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
@@ -33,7 +35,9 @@ class SyncWaveApi(
 
     suspend fun createRoom(deviceName: String): CreateRoomResponse = withContext(Dispatchers.IO) {
         val body = JSONObject().put("deviceName", deviceName).toString()
+        Log.w(TAG, "createRoom body=$body")
         val res = post("/api/rooms/create", body)
+        Log.w(TAG, "createRoom res=$res")
         CreateRoomResponse(
             code = res.getString("code"),
             roomId = res.optString("roomId", res.getString("code")),
@@ -45,7 +49,9 @@ class SyncWaveApi(
 
     suspend fun joinRoom(code: String, deviceName: String): JoinRoomResponse = withContext(Dispatchers.IO) {
         val body = JSONObject().put("deviceName", deviceName).toString()
+        Log.w(TAG, "joinRoom code=$code body=$body")
         val res = post("/api/rooms/join/$code", body)
+        Log.w(TAG, "joinRoom res=$res")
         JoinRoomResponse(
             code = res.getString("code"),
             roomId = res.optString("roomId", res.getString("code")),
@@ -81,11 +87,16 @@ class SyncWaveApi(
             put("roomId", req.roomId)
             req.payloadJson?.let { put("payload", JSONObject(it)) }
         }.toString()
-        post("/api/signaling", body).getLong("ts")
+        Log.w(TAG, "sendSignal roomId=$roomId from=$from to=$to type=$type")
+        val ts = post("/api/signaling", body).getLong("ts")
+        Log.w(TAG, "sendSignal ok ts=$ts")
+        ts
     }
 
     suspend fun pollSignals(roomId: String, peer: String): List<SignalEnvelopeDto> = withContext(Dispatchers.IO) {
+        Log.w(TAG, "pollSignals roomId=$roomId peer=$peer")
         val res = get("/api/signaling?roomId=$roomId&peer=$peer")
+        Log.w(TAG, "pollSignals res=$res")
         val arr = res.optJSONArray("signals") ?: return@withContext emptyList()
         List(arr.length()) { i ->
             val o = arr.getJSONObject(i)

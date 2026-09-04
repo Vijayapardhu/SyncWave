@@ -36,10 +36,12 @@ class VercelLongPollSignaling(
                     val signals = api.pollSignals(roomId, selfPeerId)
                     if (signals.isNotEmpty()) {
                         Log.w(TAG, "polled ${signals.size} signals")
+                    } else {
+                        Log.w(TAG, "polled 0 signals")
                     }
                     for (s in signals) _incoming.emit(s)
-                } catch (_: Throwable) {
-                    // transient
+                } catch (t: Throwable) {
+                    Log.w(TAG, "poll failed", t)
                 }
                 delay(pollIntervalMs)
             }

@@ -35,7 +35,7 @@ function memDrain(roomId: string, forPeer: string): SignalEnvelope[] {
   const delivered: SignalEnvelope[] = [];
   for (const s of list) {
     if (s.from === forPeer) continue;
-    if (s.to === undefined || s.to === forPeer) {
+    if (s.to === undefined || s.to === null || s.to === forPeer) {
       delivered.push(s);
     } else {
       remaining.push(s);
@@ -78,7 +78,7 @@ export async function drainSignals(roomId: string, forPeer: string): Promise<Sig
     const env = all[i];
     const original = raw[i];
     if (env.from === forPeer) continue; // never echo back
-    if (env.to === undefined || env.to === forPeer) {
+    if (env.to === undefined || env.to === null || env.to === forPeer) {
       delivered.push(env);
     } else {
       // Re-serialize so we can lpush the survivors back. This is a small
