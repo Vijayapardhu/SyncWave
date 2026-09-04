@@ -39,27 +39,7 @@ export async function GET(req: NextRequest) {
   const room = await getRoom(roomId);
   if (!room) return NextResponse.json({ error: "room_not_found" }, { status: 404 });
 
+  console.log(`[signaling] GET poll room=${roomId} peer=${peer}`);
   const signals = await drainSignals(roomId, peer);
   return NextResponse.json({ signals });
-}
-
-export async function DEBUG(req: NextRequest) {
-  const url = new URL(req.url);
-  const roomId = url.searchParams.get("roomId");
-  if (!roomId) return NextResponse.json({ error: "bad_request" }, { status: 400 });
-
-  const room = await getRoom(roomId);
-  if (!room) return NextResponse.json({ error: "room_not_found" }, { status: 404 });
-
-  const key = `signals:${roomId}`;
-  const raw = await kv.lrange(key, 0, -1);
-  const parsed = raw.map((s: unknown) => {
-    try {
-      const str = typeof s === "string" ? s : JSON.stringify(s);
-      return JSON.parse(str);
-    } catch {
-      return s;
-    }
-  });
-  return NextResponse.json({ key, rawCount: raw.length, signals: parsed });
 }
