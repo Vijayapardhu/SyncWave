@@ -35,7 +35,6 @@ import com.syncwave.core.ui.components.SwPanel
 fun RoomCodeScreen(
     onCancel: () -> Unit,
     onJoined: (String) -> Unit,
-    onJoinAudio: (String) -> Unit,
     onScan: () -> Unit,
 ) {
     var code by remember { mutableStateOf("") }
@@ -62,16 +61,9 @@ fun RoomCodeScreen(
 
             Column(modifier = Modifier.fillMaxWidth()) {
                 SwButton(
-                    label = if (code.length == 6) "JOIN ROOM $code" else "JOIN ROOM",
+                    label = if (code.length == 6) "JOIN $code" else "JOIN",
                     onClick = { if (code.length == 6) onJoined(code) },
                     enabled = code.length == 6,
-                )
-                Spacer(Modifier.height(12.dp))
-                SwButton(
-                    label = if (code.length == 6) "JOIN AUDIO $code" else "JOIN AUDIO",
-                    onClick = { if (code.length == 6) onJoinAudio(code) },
-                    enabled = code.length == 6,
-                    inverted = true,
                 )
                 Spacer(Modifier.height(12.dp))
                 SwButton(label = "SCAN QR", onClick = onScan, inverted = true)

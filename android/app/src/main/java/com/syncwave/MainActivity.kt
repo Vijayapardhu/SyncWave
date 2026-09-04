@@ -40,7 +40,6 @@ class MainActivity : ComponentActivity() {
                             RoomCodeScreen(
                                 onCancel = { nav.popBackStack() },
                                 onJoined = { code -> nav.navigate("audio_guest/$code") },
-                                onJoinAudio = { code -> nav.navigate("audio_guest/$code") },
                                 onScan = { nav.navigate("scan") }
                             )
                         }
