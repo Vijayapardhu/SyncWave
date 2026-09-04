@@ -2,6 +2,7 @@ package com.syncwave.feature.audio
 
 import android.app.Application
 import android.os.Build
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.syncwave.core.network.BuildConfigCompat
@@ -33,18 +34,22 @@ class AudioGuestViewModel(app: Application) : AndroidViewModel(app) {
     private var session: PeerSession? = null
 
     fun join(code: String) {
+        Log.w(TAG, "join requested code=$code")
         _state.value = AudioGuestState.Joining
         viewModelScope.launch(Dispatchers.IO) {
             runCatching { api.joinRoom(code, "GuestAudio") }
-                .onFailure {
-                    _state.value = AudioGuestState.Error(it.message ?: "join_failed"); return@launch
+                .onFailure { e ->
+                    Log.w(TAG, "joinRoom failed", e)
+                    _state.value = AudioGuestState.Error(e.message ?: "join_failed"); return@launch
                 }
                 .onSuccess { resp ->
+                    Log.w(TAG, "joinRoom ok roomId=${resp.roomId} guestId=${resp.guestId}")
                     WebRtcGlobals.init(getApplication())
                     val signaling = VercelLongPollSignaling(api, resp.roomId, resp.guestId)
                     val peer = PeerSession(getApplication(), signaling, PeerRole.GUEST).also { session = it }
                     peer.setPublishCapabilities(video = false, audio = true)
                     peer.start(viewModelScope)
+                    Log.w(TAG, "peer started, waiting for offer...")
                     observe(peer)
                 }
         }
@@ -53,6 +58,7 @@ class AudioGuestViewModel(app: Application) : AndroidViewModel(app) {
     private fun observe(peer: PeerSession) {
         viewModelScope.launch {
             peer.events.collect { ev ->
+                Log.w(TAG, "peer event=$ev")
                 when (ev) {
                     is PeerEvent.Connected -> _state.value = AudioGuestState.Listening
                     is PeerEvent.Disconnected -> _state.value = AudioGuestState.Error("disconnected")
@@ -72,5 +78,9 @@ class AudioGuestViewModel(app: Application) : AndroidViewModel(app) {
     override fun onCleared() {
         leave()
         super.onCleared()
+    }
+
+    companion object {
+        const val TAG = "SyncWave/AudioGuestVM"
     }
 }

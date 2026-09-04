@@ -1,7 +1,7 @@
 package com.syncwave.feature.audio
 
 import android.app.Application
-import android.content.Context
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.syncwave.core.network.BuildConfigCompat
@@ -44,9 +44,13 @@ class AudioHostViewModel(app: Application) : AndroidViewModel(app) {
                 .onSuccess { r ->
                     roomCode = r.code
                     hostId = r.hostId
+                    Log.w(TAG, "room created code=${r.code} hostId=${r.hostId}")
                     _state.value = AudioHostState.Ready(r.code)
                 }
-                .onFailure { _state.value = AudioHostState.Error(it.message ?: "create_failed") }
+                .onFailure { e ->
+                    Log.w(TAG, "createRoom failed", e)
+                    _state.value = AudioHostState.Error(e.message ?: "create_failed")
+                }
         }
     }
 
@@ -58,6 +62,7 @@ class AudioHostViewModel(app: Application) : AndroidViewModel(app) {
             _state.value = AudioHostState.Error("permission_denied")
             return
         }
+        Log.w(TAG, "startSharing mode=$mode")
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val signaling = VercelLongPollSignaling(api, code, hid)
@@ -70,8 +75,10 @@ class AudioHostViewModel(app: Application) : AndroidViewModel(app) {
                 peer.attachLocalAudioTrack(track)
 
                 peer.createOffer()
+                Log.w(TAG, "offer created")
                 _state.value = AudioHostState.Sharing(code)
             }.onFailure { e ->
+                Log.w(TAG, "startSharing failed", e)
                 _state.value = AudioHostState.Error(e.message ?: "start_failed")
             }
         }
@@ -87,6 +94,7 @@ class AudioHostViewModel(app: Application) : AndroidViewModel(app) {
     private fun observe(peer: PeerSession) {
         viewModelScope.launch {
             peer.events.collect { ev ->
+                Log.w(TAG, "host peer event=$ev")
                 if (ev is PeerEvent.Failure) {
                     _state.value = AudioHostState.Error(ev.cause)
                 }
@@ -97,5 +105,9 @@ class AudioHostViewModel(app: Application) : AndroidViewModel(app) {
     override fun onCleared() {
         stopSharing()
         super.onCleared()
+    }
+
+    companion object {
+        const val TAG = "SyncWave/AudioHostVM"
     }
 }

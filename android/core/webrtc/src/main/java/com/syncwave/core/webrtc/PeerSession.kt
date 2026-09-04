@@ -34,11 +34,6 @@ sealed interface PeerEvent {
     data class Failure(val cause: String) : PeerEvent
 }
 
-/**
- * Owns a [PeerConnection] and drives the SDP/ICE handshake through an
- * injected [SignalingClient]. Feature modules only see [PeerSession]; they
- * never import libwebrtc types.
- */
 class PeerSession(
     private val context: Context,
     private val signaling: SignalingClient,
@@ -63,10 +58,6 @@ class PeerSession(
         PeerConnection.IceServer.builder("stun:stun1.l.google.com:19302").createIceServer()
     )
 
-    // Scope owned by the caller (e.g. viewModelScope). All WebRTC callbacks
-    // that need to do work — sending SDP/ICE, applying remote descriptions —
-    // dispatch through this scope. Using GlobalScope here would leak the
-    // signaling client past close().
     private var scope: CoroutineScope? = null
 
     private val pc: PeerConnection by lazy {
@@ -86,8 +77,6 @@ class PeerSession(
     }
 
     private fun mediaConstraints(): MediaConstraints {
-        // The offerer (host in V0.1) only sends what the user opted into. The
-        // guest side gets transceivers automatically when applying the offer.
         val offerToReceiveAudio = role == PeerRole.GUEST
         val offerToReceiveVideo = role == PeerRole.GUEST && publishVideo
         return MediaConstraints().apply {
@@ -98,10 +87,10 @@ class PeerSession(
 
     private val observer = object : PeerConnection.Observer {
         override fun onSignalingChange(newState: PeerConnection.SignalingState?) {
-            Log.d(TAG, "signalingState=$newState")
+            Log.w(TAG, "signalingState=$newState")
         }
         override fun onIceConnectionChange(newState: PeerConnection.IceConnectionState?) {
-            Log.d(TAG, "iceConnectionState=$newState")
+            Log.w(TAG, "iceConnectionState=$newState")
             when (newState) {
                 PeerConnection.IceConnectionState.CONNECTED,
                 PeerConnection.IceConnectionState.COMPLETED -> _events.value = PeerEvent.Connected
@@ -110,10 +99,15 @@ class PeerSession(
                 else -> Unit
             }
         }
-        override fun onIceConnectionReceivingChange(receiving: Boolean) {}
-        override fun onIceGatheringChange(newState: PeerConnection.IceGatheringState?) {}
-        override fun onIceCandidate(candidate: IceCandidate) {
-            Log.d(TAG, "iceCandidate mid=${candidate.sdpMid} idx=${candidate.sdpMLineIndex}")
+        override fun onIceConnectionReceivingChange(receiving: Boolean) {
+            Log.w(TAG, "iceReceiving=$receiving")
+        }
+        override fun onIceGatheringChange(newState: PeerConnection.IceGatheringState?) {
+            Log.w(TAG, "iceGatheringState=$newState")
+        }
+        override fun onIceCandidate(candidate: IceCandidate?) {
+            Log.w(TAG, "onIceCandidate candidate=$candidate")
+            candidate ?: return
             scope?.launch {
                 runCatching {
                     signaling.send(
@@ -130,16 +124,18 @@ class PeerSession(
         }
         override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
         override fun onAddStream(stream: MediaStream?) {
+            Log.w(TAG, "onAddStream")
             stream?.videoTracks?.firstOrNull()?.let { _remoteVideoTrack.value = it }
         }
         override fun onRemoveStream(stream: MediaStream?) {}
         override fun onDataChannel(dc: DataChannel?) {
+            Log.w(TAG, "onDataChannel state=${dc?.state()}")
             dc ?: return
             dataChannel = dc
             dc.registerObserver(object : DataChannel.Observer {
                 override fun onBufferedAmountChange(previousAmount: Long) {}
                 override fun onStateChange() {
-                    Log.d(TAG, "datachannel state=${dc.state()}")
+                    Log.w(TAG, "datachannel state=${dc.state()}")
                 }
                 override fun onMessage(buffer: DataChannel.Buffer?) {
                     if (buffer == null) return
@@ -149,14 +145,18 @@ class PeerSession(
                 }
             })
         }
-        override fun onRenegotiationNeeded() {}
+        override fun onRenegotiationNeeded() {
+            Log.w(TAG, "onRenegotiationNeeded")
+        }
         override fun onAddTrack(receiver: RtpReceiver?, streams: Array<out MediaStream>?) {
+            Log.w(TAG, "onAddTrack track=${receiver?.track()}")
             when (val t = receiver?.track()) {
                 is VideoTrack -> _remoteVideoTrack.value = t
                 is AudioTrack -> _remoteAudioTrack.value = t
             }
         }
         override fun onTrack(transceiver: RtpTransceiver?) {
+            Log.w(TAG, "onTrack track=${transceiver?.receiver?.track()}")
             when (val t = transceiver?.receiver?.track()) {
                 is VideoTrack -> _remoteVideoTrack.value = t
                 is AudioTrack -> _remoteAudioTrack.value = t
@@ -166,12 +166,13 @@ class PeerSession(
 
     private val sdpObserver = object : SdpObserver {
         override fun onCreateSuccess(sdp: SessionDescription) {
-            Log.d(TAG, "sdp created type=${sdp.type}")
+            Log.w(TAG, "sdp created type=${sdp.type}")
             pc.setLocalDescription(this, sdp)
             scope?.launch {
                 runCatching {
                     val wireType = if (sdp.type == SessionDescription.Type.OFFER)
                         SignalType.OFFER else SignalType.ANSWER
+                    Log.w(TAG, "sending signal type=$wireType")
                     signaling.send(
                         type = wireType,
                         to = null,
@@ -182,19 +183,21 @@ class PeerSession(
                 }.onFailure { Log.w(TAG, "send sdp failed", it) }
             }
         }
-        override fun onSetSuccess() { Log.d(TAG, "sdp set ok") }
+        override fun onSetSuccess() { Log.w(TAG, "sdp set ok") }
         override fun onCreateFailure(error: String?) { _events.value = PeerEvent.Failure("sdp_create:$error") }
         override fun onSetFailure(error: String?) { _events.value = PeerEvent.Failure("sdp_set:$error") }
     }
 
     fun start(scope: CoroutineScope) {
+        Log.w(TAG, "start role=$role")
         this.scope = scope
         WebRtcGlobals.init(context)
         signaling.start(scope)
         scope.launch {
             signaling.incoming.collect { env ->
+                Log.w(TAG, "incoming signal type=${env.type} from=${env.from}")
                 if (env.from == selfPeerId()) {
-                    Log.d(TAG, "skipping own signal ${env.type}")
+                    Log.w(TAG, "skipping own signal ${env.type}")
                     return@collect
                 }
                 handle(env)
@@ -203,21 +206,20 @@ class PeerSession(
     }
 
     fun createOffer() {
+        Log.w(TAG, "createOffer")
         pc.createOffer(sdpObserver, mediaConstraints())
     }
 
     fun attachLocalVideoTrack(track: VideoTrack) {
+        Log.w(TAG, "attachLocalVideoTrack")
         pc.addTrack(track, listOf("ARDAMS"))
     }
 
     fun attachLocalAudioTrack(track: AudioTrack) {
+        Log.w(TAG, "attachLocalAudioTrack")
         pc.addTrack(track, listOf("ARDAMS"))
     }
 
-    /**
-     * Create a reliable DataChannel for custom payloads (e.g. system audio
-     * Opus frames). The label becomes the mDNS/SDP name.
-     */
     fun createDataChannel(label: String): DataChannel {
         val dc = pc.createDataChannel(label, DataChannel.Init().apply {
             ordered = true
@@ -227,7 +229,7 @@ class PeerSession(
         dc.registerObserver(object : DataChannel.Observer {
             override fun onBufferedAmountChange(previousAmount: Long) {}
             override fun onStateChange() {
-                Log.d(TAG, "local datachannel state=${dc.state()}")
+                Log.w(TAG, "local datachannel state=${dc.state()}")
             }
             override fun onMessage(buffer: DataChannel.Buffer?) {
                 if (buffer == null) return
@@ -248,7 +250,7 @@ class PeerSession(
     private fun selfPeerId(): String = signaling.selfPeerId
 
     private fun handle(env: SignalEnvelopeDto) {
-        Log.d(TAG, "handle ${env.type} from=${env.from}")
+        Log.w(TAG, "handle ${env.type} from=${env.from}")
         when (env.type) {
             SignalType.OFFER -> handleRemoteOffer(env.payloadJson)
             SignalType.ANSWER -> handleRemoteAnswer(env.payloadJson)
@@ -258,6 +260,7 @@ class PeerSession(
     }
 
     private fun handleRemoteOffer(payload: String?) {
+        Log.w(TAG, "handleRemoteOffer payload=$payload")
         payload ?: return
         val obj = JSONObject(payload)
         val remote = SessionDescription(
@@ -269,6 +272,7 @@ class PeerSession(
     }
 
     private fun handleRemoteAnswer(payload: String?) {
+        Log.w(TAG, "handleRemoteAnswer payload=$payload")
         payload ?: return
         val obj = JSONObject(payload)
         val remote = SessionDescription(
@@ -279,6 +283,7 @@ class PeerSession(
     }
 
     private fun handleRemoteIce(payload: String?) {
+        Log.w(TAG, "handleRemoteIce payload=$payload")
         payload ?: return
         val obj = JSONObject(payload)
         val cand = IceCandidate(

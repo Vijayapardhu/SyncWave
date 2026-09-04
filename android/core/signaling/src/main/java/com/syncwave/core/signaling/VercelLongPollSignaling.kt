@@ -13,12 +13,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import android.util.Log
 
-/**
- * Polls the Vercel signaling endpoint on a short interval. Suitable for V0.1
- * where we deliberately want zero infrastructure beyond the Next.js app.
- * Latency is bounded by [pollIntervalMs].
- */
 class VercelLongPollSignaling(
     private val api: SyncWaveApi,
     private val roomId: String,
@@ -33,14 +29,17 @@ class VercelLongPollSignaling(
 
     override fun start(scope: CoroutineScope) {
         if (pumpJob?.isActive == true) return
+        Log.w(TAG, "start polling roomId=$roomId peer=$selfPeerId")
         pumpJob = scope.launch(Dispatchers.IO) {
             while (isActive) {
                 try {
                     val signals = api.pollSignals(roomId, selfPeerId)
+                    if (signals.isNotEmpty()) {
+                        Log.w(TAG, "polled ${signals.size} signals")
+                    }
                     for (s in signals) _incoming.emit(s)
                 } catch (_: Throwable) {
-                    // transient — try again next tick. Real apps would
-                    // back off on consecutive failures.
+                    // transient
                 }
                 delay(pollIntervalMs)
             }
@@ -53,10 +52,12 @@ class VercelLongPollSignaling(
     }
 
     override suspend fun send(type: SignalType, to: String?, payload: JSONObject?) {
+        Log.w(TAG, "send type=$type to=$to")
         api.sendSignal(roomId, selfPeerId, to, type, payload)
     }
 
     companion object {
         const val POLL_INTERVAL_MS = 500L
+        const val TAG = "SyncWave/Signaling"
     }
 }
