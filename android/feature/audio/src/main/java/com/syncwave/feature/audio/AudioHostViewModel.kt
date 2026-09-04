@@ -54,7 +54,7 @@ class AudioHostViewModel(app: Application) : AndroidViewModel(app) {
         if (session != null) return
         val code = roomCode ?: return
         val hid = hostId ?: return
-        if (resultCode != android.app.Activity.RESULT_OK || data == null) {
+        if (resultCode != android.app.Activity.RESULT_OK) {
             _state.value = AudioHostState.Error("permission_denied")
             return
         }
