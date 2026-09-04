@@ -1,13 +1,13 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!--
-        Base app theme. Applied after the splash is dismissed. Light
-        surfaces, dark ink — matches the brand (white background plate,
-        black waves).
+        Base app theme. Black background, paper ink — strict monochrome
+        to match the brand (white-on-black wave plate).
     -->
-    <style name="Theme.SyncWave" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.SyncWave" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/syncwave_background</item>
         <item name="android:statusBarColor">@color/syncwave_background</item>
+        <item name="android:navigationBarColor">@color/syncwave_background</item>
     </style>
 
     <!--
@@ -20,7 +20,6 @@
         <item name="windowSplashScreenAnimatedIcon">@drawable/sw_splash_icon</item>
         <item name="windowSplashScreenAnimationDuration">300</item>
         <item name="postSplashScreenTheme">@style/Theme.SyncWave</item>
-        <!-- Pre-12 fallback -->
         <item name="android:windowBackground">@drawable/sw_splash_background</item>
     </style>
 </resources>

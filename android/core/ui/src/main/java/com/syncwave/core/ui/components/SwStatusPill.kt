@@ -1,7 +1,5 @@
 package com.syncwave.core.ui.components
 
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -18,60 +16,47 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import com.syncwave.core.ui.SwColors
 import com.syncwave.core.ui.SwType
 
+/**
+ * Monochrome status pill. Active = inverted (black fill, paper ink, paper
+ * dot). Inactive = paper fill, ink border, ink dot. No color.
+ */
 @Composable
 fun SwStatusPill(
     label: String,
     active: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    val backgroundColor = if (active) {
-        Brush.linearGradient(
-            colors = listOf(
-                SwColors.SuccessInk.copy(alpha = 0.2f),
-                SwColors.SuccessInk.copy(alpha = 0.1f),
-            )
-        )
-    } else {
-        Brush.linearGradient(
-            colors = listOf(
-                SwColors.SurfaceAlt,
-                SwColors.Paper,
-            )
-        )
-    }
-    
-    val dotColor = if (active) SwColors.SuccessInk else SwColors.QuietInk
-    val borderColor = if (active) SwColors.SuccessInk else SwColors.Hairline
-    
+    val bg = if (active) SwColors.Ink else SwColors.Paper
+    val fg = if (active) SwColors.Paper else SwColors.Ink
+    val border = if (active) SwColors.Ink else SwColors.Ink
+    val dot = if (active) SwColors.Paper else SwColors.Ink
+
     Row(
         modifier = modifier
-            .background(backgroundColor, shape = RoundedCornerShape(20.dp))
-            .border(1.5.dp, borderColor, RoundedCornerShape(20.dp))
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .background(bg, shape = RoundedCornerShape(2.dp))
+            .border(1.dp, border, RoundedCornerShape(2.dp))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {
-        // Pulsing dot indicator
         Box(
             modifier = Modifier
                 .size(8.dp)
                 .clip(CircleShape)
-                .background(dotColor)
+                .background(dot)
         )
         Spacer(Modifier.width(8.dp))
         Text(
             text = label.uppercase(),
-            color = if (active) SwColors.SuccessInk else SwColors.SubduedInk,
+            color = fg,
             style = SwType.label.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
-            letterSpacing = 0.5.sp,
+            letterSpacing = 1.sp,
         )
     }
 }

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,15 +20,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.syncwave.core.ui.SwColors
-import com.syncwave.core.ui.SwMono
 import com.syncwave.core.ui.SwType
+import com.syncwave.core.ui.components.ButtonVariant
 import com.syncwave.core.ui.components.SwButton
 import com.syncwave.core.ui.components.SwPanel
 
@@ -40,19 +38,21 @@ fun RoomCodeScreen(
     onScan: () -> Unit,
 ) {
     var code by remember { mutableStateOf("") }
-    Box(modifier = Modifier.fillMaxSize().background(SwColors.Paper)) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(SwColors.Ink)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp)
-                .padding(top = 48.dp, bottom = 32.dp),
+                .padding(top = 56.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text("JOIN", color = SwColors.Ink, style = SwType.label)
+            Text("JOIN", color = SwColors.Paper, style = SwType.label)
 
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text("ROOM CODE", color = SwColors.SubduedInk, style = SwType.label)
-                Spacer(Modifier.height(12.dp))
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("ROOM CODE", color = SwColors.Slate, style = SwType.label)
                 CodeInput(
                     value = code,
                     onValueChange = { code = it.uppercase().take(6) },
@@ -66,17 +66,9 @@ fun RoomCodeScreen(
                     enabled = code.length == 6,
                 )
                 Spacer(Modifier.height(12.dp))
-                SwButton(
-                    label = "SCAN QR",
-                    onClick = onScan,
-                    inverted = true,
-                )
+                SwButton(label = "SCAN QR", onClick = onScan, inverted = true)
                 Spacer(Modifier.height(12.dp))
-                SwButton(
-                    label = "CANCEL",
-                    onClick = onCancel,
-                    inverted = true,
-                )
+                SwButton(label = "CANCEL", onClick = onCancel, inverted = true)
             }
         }
     }
@@ -85,16 +77,20 @@ fun RoomCodeScreen(
 @Composable
 private fun CodeInput(value: String, onValueChange: (String) -> Unit) {
     val baseStyle = SwType.code.copy(
-        color = SwColors.Ink,
+        color = SwColors.Paper,
         textAlign = TextAlign.Center,
     )
-    SwPanel(contentPadding = androidx.compose.foundation.layout.PaddingValues(24.dp)) {
+    SwPanel(
+        background = SwColors.Ink,
+        borderColor = SwColors.Paper,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(24.dp),
+    ) {
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
             singleLine = true,
             textStyle = baseStyle,
-            cursorBrush = SolidColor(SwColors.Ink),
+            cursorBrush = SolidColor(SwColors.Paper),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Ascii,
                 capitalization = KeyboardCapitalization.Characters,
@@ -109,7 +105,7 @@ private fun CodeInput(value: String, onValueChange: (String) -> Unit) {
                     if (value.isEmpty()) {
                         Text(
                             text = "—— ——",
-                            color = SwColors.QuietInk,
+                            color = SwColors.Slate,
                             style = baseStyle,
                         )
                     }

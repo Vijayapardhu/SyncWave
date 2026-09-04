@@ -11,25 +11,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +37,7 @@ import com.syncwave.core.ui.components.GradientPanel
 import com.syncwave.core.ui.components.SwButton
 import com.syncwave.core.ui.components.SwPanel
 import com.syncwave.core.ui.components.SwStatusPill
+import com.syncwave.core.media.ShareForegroundService
 import com.syncwave.core.ui.qr.QrPayload
 import com.syncwave.core.ui.qr.encodeQrCode
 
@@ -65,28 +59,20 @@ fun HostScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        SwColors.Paper,
-                        Color(0xFFF0F9FF),
-                    )
-                )
-            )
+            .background(SwColors.Ink)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp)
-                .padding(top = 48.dp, bottom = 32.dp),
+                .padding(top = 56.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             HostHeader(state = state, onBack = onBack)
 
-            // Middle: room code or QR
             when (val s = state) {
-                is HostState.Creating -> EmptyStage(label = "🔄 CREATING ROOM…")
-                is HostState.Error     -> EmptyStage(label = "❌ ${s.message.uppercase()}")
+                is HostState.Creating -> EmptyStage(label = "CREATING ROOM…")
+                is HostState.Error    -> EmptyStage(label = "ERROR: ${s.message.uppercase()}")
                 is HostState.Ready, is HostState.Sharing -> RoomStage(
                     code = (s as? HostState.Ready)?.code
                         ?: (s as HostState.Sharing).code,
@@ -96,8 +82,14 @@ fun HostScreen(
 
             HostActions(
                 state = state,
-                onStart = { projectionLauncher.launch(requester.createIntent()) },
-                onStop  = { vm.stopSharing() },
+                onStart = {
+                    ShareForegroundService.start(context)
+                    projectionLauncher.launch(requester.createIntent())
+                },
+                onStop  = {
+                    vm.stopSharing()
+                    ShareForegroundService.stop(context)
+                },
                 onBack  = onBack,
             )
         }
@@ -115,16 +107,16 @@ private fun HostHeader(state: HostState, onBack: () -> Unit) {
     ) {
         Text(
             text = "HOST",
-            color = SwColors.Ink,
+            color = SwColors.Paper,
             style = SwType.label,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
         )
         SwStatusPill(
             label = when (state) {
                 is HostState.Creating -> "CONNECTING"
                 is HostState.Ready    -> "READY"
-                is HostState.Sharing  -> "🔴 LIVE"
+                is HostState.Sharing  -> "LIVE"
                 is HostState.Error    -> "ERROR"
             },
             active = state is HostState.Sharing,
@@ -140,50 +132,44 @@ private fun RoomStage(code: String, sharing: Boolean) {
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Text(
-            text = if (sharing) "🎬 STREAMING LIVE" else "📍 ROOM CODE",
-            color = SwColors.SubduedInk,
+            text = if (sharing) "STREAMING" else "ROOM CODE",
+            color = SwColors.Slate,
             style = SwType.label,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Black,
             letterSpacing = 1.5.sp,
         )
-        
-        // Highlight room code in a colored box
+
         GradientPanel(
-            colors = listOf(
-                SwColors.PrimaryGradientStart.copy(alpha = 0.1f),
-                SwColors.PrimaryGradientEnd.copy(alpha = 0.05f),
-            ),
             contentPadding = PaddingValues(24.dp),
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
-                    "Enter this code:",
+                    "Enter this code",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    color = SwColors.SubduedInk,
+                    color = SwColors.Slate,
                 )
                 Text(
                     text = code,
-                    color = SwColors.PrimaryGradientStart,
+                    color = SwColors.Paper,
                     style = SwType.code,
                     textAlign = TextAlign.Center,
                     fontSize = 52.sp,
                 )
                 Text(
-                    "or scan the QR below",
+                    "or scan the QR",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Normal,
-                    color = SwColors.QuietInk,
+                    color = SwColors.Slate,
                 )
             }
         }
-        
-        // QR Code Panel with gradient
+
         QrPanel(code = code)
     }
 }
@@ -191,12 +177,8 @@ private fun RoomStage(code: String, sharing: Boolean) {
 @Composable
 private fun QrPanel(code: String) {
     val bitmap: Bitmap? = remember(code) { runCatching { encodeQrCode(QrPayload.forRoom(code), 384) }.getOrNull() }
-    GradientPanel(
-        colors = listOf(
-            SwColors.Paper,
-            SwColors.SurfaceAlt,
-        ),
-        contentPadding = PaddingValues(24.dp),
+    SwPanel(
+        contentPadding = PaddingValues(20.dp),
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -204,17 +186,17 @@ private fun QrPanel(code: String) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                "📱 SCAN WITH PHONE",
-                color = SwColors.SubduedInk,
+                "SCAN WITH PHONE",
+                color = SwColors.Ink,
                 style = SwType.label,
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Black,
             )
             Box(
                 modifier = Modifier
                     .background(SwColors.Paper)
-                    .padding(16.dp)
-                    .size(240.dp),
+                    .padding(12.dp)
+                    .size(220.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 bitmap?.let {
@@ -231,24 +213,20 @@ private fun QrPanel(code: String) {
 
 @Composable
 private fun EmptyStage(label: String) {
-    GradientPanel(
-        colors = listOf(
-            Color(0xFFFEE2E2),
-            Color(0xFFFFCBCB),
-        ),
-        contentPadding = PaddingValues(40.dp),
+    SwPanel(
+        contentPadding = PaddingValues(32.dp),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp),
+                .height(180.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 label,
-                color = SwColors.DangerInk,
+                color = SwColors.Ink,
                 style = SwType.title,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Black,
                 fontSize = 18.sp,
                 textAlign = TextAlign.Center,
             )
@@ -267,20 +245,20 @@ private fun HostActions(
         when (state) {
             is HostState.Ready ->
                 SwButton(
-                    label = "▶️ START SHARING",
+                    label = "START SHARING",
                     onClick = onStart,
                     variant = ButtonVariant.PRIMARY,
                 )
             is HostState.Sharing ->
                 SwButton(
-                    label = "⏹️ STOP SHARING",
+                    label = "STOP SHARING",
                     onClick = onStop,
                     variant = ButtonVariant.DANGER,
                 )
             is HostState.Creating ->
                 SwButton(label = "BACK", onClick = onBack, enabled = false)
             is HostState.Error ->
-                SwButton(label = "↩️ BACK", onClick = onBack, variant = ButtonVariant.DANGER)
+                SwButton(label = "BACK", onClick = onBack, variant = ButtonVariant.DANGER)
         }
     }
 }

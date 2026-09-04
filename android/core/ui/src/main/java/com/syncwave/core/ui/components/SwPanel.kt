@@ -8,58 +8,34 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.syncwave.core.ui.SwColors
 
 /**
- * Modern premium panel with glass morphism effects
- * - Rounded corners (16dp)
- * - Subtle gradient background
- * - Soft shadow for elevation
- * - Optional border for subtle definition
+ * Flat monochrome panel. No shadow, no gradient — just a black or white
+ * surface with a single hairline border. The whole app is a grid of these.
  */
 @Composable
 fun SwPanel(
     modifier: Modifier = Modifier,
     contentPadding: androidx.compose.foundation.layout.PaddingValues =
-        androidx.compose.foundation.layout.PaddingValues(24.dp),
+        androidx.compose.foundation.layout.PaddingValues(20.dp),
     background: Color = SwColors.Paper,
-    borderColor: Color? = null,
+    borderColor: Color = SwColors.Ink,
     borderWidth: androidx.compose.ui.unit.Dp = 1.dp,
     useGradient: Boolean = false,
     isGlassomorphic: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val backgroundColor = when {
-        isGlassomorphic -> SwColors.GlassLight
-        useGradient -> background
-        else -> background
-    }
-    
-    val shape = RoundedCornerShape(16.dp)
-    
+    val shape = RoundedCornerShape(4.dp)
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(
-                elevation = 8.dp,
-                shape = shape,
-                clip = false,
-            )
             .clip(shape)
-            .background(backgroundColor)
-            .let { mod ->
-                if (borderColor != null) {
-                    mod.border(borderWidth, borderColor, shape)
-                } else {
-                    mod
-                }
-            }
+            .background(if (isGlassomorphic) SwColors.Paper else background)
+            .border(borderWidth, borderColor, shape)
             .padding(contentPadding)
     ) {
         content()
@@ -67,28 +43,23 @@ fun SwPanel(
 }
 
 /**
- * Gradient panel with two-color gradient background
+ * Inverted panel: black surface, paper ink, paper border. Used to break up
+ * long page sections without introducing color.
  */
 @Composable
 fun GradientPanel(
     modifier: Modifier = Modifier,
-    colors: List<Color> = listOf(SwColors.PrimaryGradientStart, SwColors.PrimaryGradientEnd),
+    colors: List<Color> = listOf(SwColors.Ink, SwColors.Ink),
     contentPadding: androidx.compose.foundation.layout.PaddingValues =
-        androidx.compose.foundation.layout.PaddingValues(24.dp),
+        androidx.compose.foundation.layout.PaddingValues(20.dp),
     content: @Composable () -> Unit,
 ) {
-    val shape = RoundedCornerShape(16.dp)
-    
+    val shape = RoundedCornerShape(4.dp)
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(
-                elevation = 12.dp,
-                shape = shape,
-                clip = false,
-            )
             .clip(shape)
-            .background(Brush.linearGradient(colors = colors))
+            .background(SwColors.Ink)
             .padding(contentPadding)
     ) {
         content()

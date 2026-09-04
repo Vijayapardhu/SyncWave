@@ -3,6 +3,7 @@ package com.syncwave.core.ui.components
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -19,8 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,11 +28,8 @@ import com.syncwave.core.ui.SwColors
 import com.syncwave.core.ui.SwType
 
 /**
- * Premium gradient button with smooth interactions
- * - Gradient from blue to cyan (primary) or purple to pink (secondary)
- * - Scale animation on press with shadow effect
- * - Rounded corners with elevation
- * - High contrast, bold typography
+ * Flat monochrome button. Inverted variants flip black/white. Disabled is
+ * a paper background with a graphite hairline and graphite ink.
  */
 @Composable
 fun SwButton(
@@ -47,52 +43,30 @@ fun SwButton(
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scaleProgress by animateFloatAsState(
-        targetValue = if (pressed) 0.96f else 1f,
-        animationSpec = tween(100),
+        targetValue = if (pressed) 0.98f else 1f,
+        animationSpec = tween(80),
         label = "buttonScale",
     )
-    
-    val shadowProgress by animateFloatAsState(
-        targetValue = if (pressed) 4f else 12f,
-        animationSpec = tween(100),
-        label = "buttonShadow",
-    )
 
-    val gradient = when {
-        inverted -> Brush.linearGradient(
-            colors = listOf(SwColors.Ink, SwColors.Ink.copy(alpha = 0.8f)),
-        )
-        else -> when (variant) {
-            ButtonVariant.PRIMARY -> Brush.linearGradient(
-                colors = listOf(SwColors.PrimaryGradientStart, SwColors.PrimaryGradientEnd),
-            )
-            ButtonVariant.SECONDARY -> Brush.linearGradient(
-                colors = listOf(SwColors.AccentPurple, SwColors.AccentPink),
-            )
-            ButtonVariant.SUCCESS -> Brush.linearGradient(
-                colors = listOf(SwColors.SuccessInk, Color(0xFF059669)),
-            )
-            ButtonVariant.DANGER -> Brush.linearGradient(
-                colors = listOf(SwColors.DangerInk, Color(0xFFDC2626)),
-            )
-        }
+    val bg: Color
+    val fg: Color
+    val border: Color
+    when {
+        !enabled -> { bg = SwColors.Paper; fg = SwColors.Slate; border = SwColors.Slate }
+        inverted -> { bg = SwColors.Paper; fg = SwColors.Ink; border = SwColors.Ink }
+        variant == ButtonVariant.DANGER -> { bg = SwColors.Paper; fg = SwColors.Ink; border = SwColors.Ink }
+        else -> { bg = SwColors.Ink; fg = SwColors.Paper; border = SwColors.Ink }
     }
 
-    val shape = RoundedCornerShape(12.dp)
-    
+    val shape = RoundedCornerShape(2.dp)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .shadow(
-                elevation = if (enabled) shadowProgress.dp else 2.dp,
-                shape = shape,
-                clip = false,
-            )
             .clip(shape)
-            .background(if (enabled) gradient else Brush.linearGradient(
-                colors = listOf(SwColors.SurfaceAlt, SwColors.SurfaceAlt)
-            ))
+            .background(bg)
+            .border(1.dp, border, shape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -105,13 +79,11 @@ fun SwButton(
     ) {
         Text(
             text = label,
-            color = if (enabled) SwColors.Paper else SwColors.QuietInk,
+            color = fg,
             style = SwType.body.copy(fontWeight = FontWeight.Black),
             textAlign = TextAlign.Center,
         )
     }
 }
 
-enum class ButtonVariant {
-    PRIMARY, SECONDARY, SUCCESS, DANGER
-}
+enum class ButtonVariant { PRIMARY, SECONDARY, SUCCESS, DANGER }

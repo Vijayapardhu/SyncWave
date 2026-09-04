@@ -1,12 +1,13 @@
 package com.syncwave.feature.audio
 
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,9 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -35,6 +33,13 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult as rememberPermLauncher
 import androidx.activity.result.contract.ActivityResultContracts as PermContracts
+import com.syncwave.core.media.ShareForegroundService
+import com.syncwave.core.ui.SwColors
+import com.syncwave.core.ui.SwMono
+import com.syncwave.core.ui.SwType
+import com.syncwave.core.ui.components.ButtonVariant
+import com.syncwave.core.ui.components.SwButton
+import com.syncwave.core.ui.components.SwPanel
 
 @Composable
 fun AudioShareScreen(onBack: () -> Unit, vm: AudioHostViewModel = viewModel()) {
@@ -43,11 +48,7 @@ fun AudioShareScreen(onBack: () -> Unit, vm: AudioHostViewModel = viewModel()) {
 
     val micPermissionLauncher = rememberPermLauncher(
         PermContracts.RequestPermission()
-    ) { granted ->
-        if (!granted) {
-            // Stay on Ready; the user can switch to System instead, or just go back.
-        }
-    }
+    ) { granted -> if (!granted) { /* stay on Ready; user can switch to SYSTEM or back */ } }
 
     val projectionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -56,139 +57,160 @@ fun AudioShareScreen(onBack: () -> Unit, vm: AudioHostViewModel = viewModel()) {
             ?: (state as? AudioHostState.Sharing)?.mode
             ?: AudioSourceMode.MIC
         if (mode == AudioSourceMode.MIC) {
-            // Microphone doesn't need the projection result; sharing starts
-            // directly. We still call startSharing so the VM advances state.
             vm.startSharing(android.app.Activity.RESULT_OK, Intent(), mode)
         } else {
             vm.startSharing(result.resultCode, result.data, mode)
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(SwColors.Ink)
     ) {
-        Text("Share audio", fontSize = 28.sp, fontWeight = FontWeight.SemiBold)
-        Spacer(Modifier.height(12.dp))
-        val code = (state as? AudioHostState.Ready)?.code
-            ?: (state as? AudioHostState.Sharing)?.code
-            ?: "••••••"
-        Text(code, fontSize = 40.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
-        Spacer(Modifier.height(8.dp))
-        Text(
-            when (state) {
-                is AudioHostState.Creating -> "Creating room…"
-                is AudioHostState.Ready -> "Waiting for guest…"
-                is AudioHostState.Sharing -> "Sharing audio…"
-                is AudioHostState.Error -> "Error: ${(state as AudioHostState.Error).message}"
-            },
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Spacer(Modifier.height(24.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp)
+                .padding(top = 56.dp, bottom = 32.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                "AUDIO HOST",
+                color = SwColors.Paper,
+                style = SwType.label,
+            )
 
-        if (state is AudioHostState.Ready) {
-            Text("Audio source", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(8.dp))
-            val current = (state as AudioHostState.Ready).mode
-            Row(
-                modifier = Modifier.fillMaxWidth().selectable(
-                    selected = current == AudioSourceMode.MIC,
-                    onClick = { vm.setMode(AudioSourceMode.MIC) }
-                ).padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(selected = current == AudioSourceMode.MIC, onClick = null)
-                Spacer(Modifier.width(8.dp))
-                Column {
-                    Text("Microphone", fontWeight = FontWeight.Medium)
-                    Text(
-                        "Capture your voice from the device mic.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth().selectable(
-                    selected = current == AudioSourceMode.SYSTEM,
-                    onClick = {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            vm.setMode(AudioSourceMode.SYSTEM)
-                        }
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                val code = (state as? AudioHostState.Ready)?.code
+                    ?: (state as? AudioHostState.Sharing)?.code
+                    ?: "------"
+                SwPanel(
+                    background = SwColors.Ink,
+                    borderColor = SwColors.Paper,
+                    contentPadding = PaddingValues(24.dp),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            "ROOM CODE",
+                            color = SwColors.Slate,
+                            style = SwType.label,
+                            fontSize = 10.sp,
+                        )
+                        Text(
+                            code,
+                            color = SwColors.Paper,
+                            style = SwType.code,
+                            fontSize = 44.sp,
+                            fontFamily = SwMono,
+                        )
                     }
-                ).padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(
-                    selected = current == AudioSourceMode.SYSTEM,
-                    onClick = null,
-                    enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                }
+                Text(
+                    when (state) {
+                        is AudioHostState.Creating -> "Creating room."
+                        is AudioHostState.Ready    -> "Waiting for guest."
+                        is AudioHostState.Sharing  -> "Sharing audio."
+                        is AudioHostState.Error    -> "Error: ${(state as AudioHostState.Error).message}"
+                    },
+                    color = SwColors.Slate,
+                    style = SwType.body,
                 )
-                Spacer(Modifier.width(8.dp))
-                Column {
-                    Text(
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) "System audio"
-                        else "System audio (Android 10+)",
-                        fontWeight = FontWeight.Medium
+            }
+
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (state is AudioHostState.Ready) {
+                    val current = (state as AudioHostState.Ready).mode
+                    ModeRow(
+                        label = "MICROPHONE",
+                        description = "Capture your voice from the device mic.",
+                        selected = current == AudioSourceMode.MIC,
+                        onSelect = { vm.setMode(AudioSourceMode.MIC) },
                     )
-                    Text(
-                        "Capture whatever the device is playing (music, video).",
-                        style = MaterialTheme.typography.bodySmall
+                    ModeRow(
+                        label = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                            "SYSTEM AUDIO" else "SYSTEM AUDIO (ANDROID 10+)",
+                        description = "Capture whatever the device is playing.",
+                        selected = current == AudioSourceMode.SYSTEM,
+                        enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q,
+                        onSelect = { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) vm.setMode(AudioSourceMode.SYSTEM) },
+                    )
+                    SwButton(
+                        label = "START SHARING",
+                        onClick = {
+                            val ready = state as? AudioHostState.Ready ?: return@SwButton
+                            ShareForegroundService.start(context)
+                            when (ready.mode) {
+                                AudioSourceMode.MIC -> {
+                                    micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    vm.startSharing(android.app.Activity.RESULT_OK, Intent(), ready.mode)
+                                }
+                                AudioSourceMode.SYSTEM -> {
+                                    projectionLauncher.launch(vm.projectionRequester.createIntent())
+                                }
+                            }
+                        },
+                    )
+                }
+                if (state is AudioHostState.Sharing) {
+                    SwButton(
+                        label = "STOP SHARING",
+                        onClick = {
+                            vm.stopSharing()
+                            ShareForegroundService.stop(context)
+                        },
+                        variant = ButtonVariant.DANGER,
+                    )
+                }
+                if (state is AudioHostState.Creating || state is AudioHostState.Error) {
+                    SwButton(
+                        label = "BACK",
+                        onClick = {
+                            if (state is AudioHostState.Error) ShareForegroundService.stop(context)
+                            onBack()
+                        },
+                        inverted = true,
                     )
                 }
             }
-            Spacer(Modifier.height(24.dp))
-            Button(
-                onClick = {
-                    val ready = state as? AudioHostState.Ready ?: return@Button
-                    startShareForegroundService(context)
-                    when (ready.mode) {
-                        AudioSourceMode.MIC -> {
-                            micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                            vm.startSharing(android.app.Activity.RESULT_OK, Intent(), ready.mode)
-                        }
-                        AudioSourceMode.SYSTEM -> {
-                            projectionLauncher.launch(vm.projectionRequester.createIntent())
-                        }
-                    }
-                }
-            ) { Text("Start sharing") }
-        }
-
-        if (state is AudioHostState.Sharing) {
-            Button(onClick = {
-                vm.stopSharing()
-                stopShareForegroundService(context)
-            }) { Text("Stop sharing") }
-        }
-
-        if (state is AudioHostState.Creating || state is AudioHostState.Error) {
-            Button(onClick = {
-                if (state is AudioHostState.Error) {
-                    stopShareForegroundService(context)
-                }
-                onBack()
-            }) { Text("Back") }
         }
     }
 }
 
-private fun startShareForegroundService(context: Context) {
-    val intent = Intent().apply {
-        component = ComponentName(
-            context.packageName,
-            "com.syncwave.share.ShareForegroundService"
+@Composable
+private fun ModeRow(
+    label: String,
+    description: String,
+    selected: Boolean,
+    enabled: Boolean = true,
+    onSelect: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(if (selected) SwColors.Paper else SwColors.Coal)
+            .padding(16.dp)
+            .selectable(selected = selected, enabled = enabled, onClick = onSelect),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(14.dp)
+                .background(if (selected) SwColors.Ink else SwColors.Slate),
         )
+        Spacer(Modifier.width(16.dp))
+        Column {
+            Text(
+                label,
+                color = if (selected) SwColors.Ink else SwColors.Paper,
+                fontWeight = FontWeight.Black,
+                fontSize = 12.sp,
+            )
+            Text(
+                description,
+                color = if (selected) SwColors.Ink else SwColors.Slate,
+                fontSize = 12.sp,
+            )
+        }
     }
-    runCatching { context.startForegroundService(intent) }
-}
-
-private fun stopShareForegroundService(context: Context) {
-    val intent = Intent().apply {
-        component = ComponentName(
-            context.packageName,
-            "com.syncwave.share.ShareForegroundService"
-        )
-    }
-    runCatching { context.stopService(intent) }
 }

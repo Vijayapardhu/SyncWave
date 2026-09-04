@@ -1,4 +1,4 @@
-package com.syncwave.share
+package com.syncwave.core.media
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -15,8 +15,8 @@ import androidx.core.app.NotificationCompat
  * Android 14+ requires a foreground service of type mediaProjection to be
  * started before [android.media.projection.MediaProjectionManager.getMediaProjection]
  * is called. This service exists to satisfy that requirement while the host
- * is actively sharing. V0.2 will move the full [com.syncwave.core.webrtc.PeerSession]
- * lifetime into here.
+ * is actively sharing. It is declared in the app manifest with
+ * `foregroundServiceType="mediaProjection"`.
  */
 class ShareForegroundService : Service() {
 
@@ -25,8 +25,8 @@ class ShareForegroundService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         ensureChannel()
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("SyncWave is sharing your screen")
-            .setContentText("Tap the app to return to controls")
+            .setContentTitle("SyncWave")
+            .setContentText("Sharing your screen.")
             .setSmallIcon(android.R.drawable.ic_menu_camera)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)

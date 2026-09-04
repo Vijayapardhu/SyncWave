@@ -13,6 +13,7 @@ import com.syncwave.core.webrtc.PeerRole
 import com.syncwave.core.webrtc.PeerSession
 import com.syncwave.core.webrtc.ScreenTrackFactory
 import com.syncwave.core.media.ScreenCaptureConfigFactory
+import com.syncwave.core.media.ShareForegroundService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -61,6 +62,10 @@ class HostViewModel(app: Application) : AndroidViewModel(app) {
             _state.value = HostState.Error("permission_denied")
             return
         }
+        // Android 14+ requires the mediaProjection foreground service to be
+        // started before getMediaProjection() is invoked. Start it now so the
+        // subsequent capturer.initialize/startCapture path is legal.
+        ShareForegroundService.start(getApplication())
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val signaling = VercelLongPollSignaling(api, code, hid)
@@ -73,7 +78,10 @@ class HostViewModel(app: Application) : AndroidViewModel(app) {
                 peer.attachLocalVideoTrack(track)
                 peer.createOffer()
                 _state.value = HostState.Sharing(code)
-            }.onFailure { _state.value = HostState.Error(it.message ?: "start_failed") }
+            }.onFailure { e ->
+                ShareForegroundService.stop(getApplication())
+                _state.value = HostState.Error(e.message ?: "start_failed")
+            }
         }
     }
 
@@ -82,6 +90,7 @@ class HostViewModel(app: Application) : AndroidViewModel(app) {
         localTrack = null
         session?.close()
         session = null
+        ShareForegroundService.stop(getApplication())
         roomCode?.let { code -> _state.value = HostState.Ready(code) }
     }
 
@@ -89,7 +98,10 @@ class HostViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             peer.events.collect { ev ->
                 when (ev) {
-                    is PeerEvent.Failure -> _state.value = HostState.Error(ev.cause)
+                    is PeerEvent.Failure -> {
+                        _state.value = HostState.Error(ev.cause)
+                        ShareForegroundService.stop(getApplication())
+                    }
                     else -> Unit
                 }
             }

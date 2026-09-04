@@ -16,6 +16,7 @@ import com.syncwave.core.webrtc.PeerEvent
 import com.syncwave.core.webrtc.PeerRole
 import com.syncwave.core.webrtc.PeerSession
 import com.syncwave.core.webrtc.SystemAudioEncoder
+import com.syncwave.core.media.ShareForegroundService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -73,6 +74,8 @@ class AudioHostViewModel(app: Application) : AndroidViewModel(app) {
             _state.value = AudioHostState.Error("permission_denied")
             return
         }
+        // Start the mediaProjection FGS before any getMediaProjection() call.
+        ShareForegroundService.start(getApplication())
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val signaling = VercelLongPollSignaling(api, code, hid)
@@ -113,7 +116,10 @@ class AudioHostViewModel(app: Application) : AndroidViewModel(app) {
 
                 peer.createOffer()
                 _state.value = AudioHostState.Sharing(code, mode)
-            }.onFailure { _state.value = AudioHostState.Error(it.message ?: "start_failed") }
+            }.onFailure { e ->
+                ShareForegroundService.stop(getApplication())
+                _state.value = AudioHostState.Error(e.message ?: "start_failed")
+            }
         }
     }
 

@@ -21,6 +21,7 @@ dependencies {
     implementation(project(":core:network"))
     implementation(project(":core:signaling"))
     implementation(project(":core:webrtc"))
+    implementation(project(":core:ui"))
 
     implementation(platform("androidx.compose:compose-bom:2024.05.00"))
     implementation("androidx.activity:activity-compose:1.9.0")

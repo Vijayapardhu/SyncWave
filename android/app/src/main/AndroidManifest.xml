@@ -25,11 +25,5 @@
             </intent-filter>
         </activity>
 
-        <!-- V0.2: foreground service so the host keeps MediaProjection + WebRTC
-             alive when the Activity is backgrounded. Implementation deferred. -->
-        <service
-            android:name=".share.ShareForegroundService"
-            android:exported="false"
-            android:foregroundServiceType="mediaProjection" />
     </application>
 </manifest>
